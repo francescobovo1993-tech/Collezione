@@ -99,7 +99,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
   };
   const doImportSheet = (who: Who) => {
     update(s => importFromSheet(s, who, data.sheet));
-    toast(who === 'none' ? 'Si parte da zero.' : 'Buste importate dal foglio.');
+    toast(`Buste di ${who === 'bobbi' ? 'Bobbi' : 'Pomo'} importate dal vecchio foglio.`);
   };
 
   const active = rows.filter(r => !r.removed).length;
@@ -108,19 +108,6 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
   const cartItems = Object.values(st.cart).filter(c => c.qty > 0);
   const cartPcs = cartItems.reduce((s, c) => s + c.qty, 0);
 
-  const banner = !st.imported && (
-    <div className="notice import">
-      <span className="grow"><b>Prima volta qui?</b> Importa le buste segnate nel vecchio foglio «Buste Manga».</span>
-      <span className="btns">
-        <button className="btn primary" onClick={() => doImportSheet('bobbi')}>Sono Bobbi</button>
-        <button className="btn" onClick={() => doImportSheet('pomo')}>Sono Pomo</button>
-        <button className="btn" onClick={() => doImportSheet('none')}>Parto da zero</button>
-        <label className="btn">Importa il mio stato
-          <input className="vis-hidden" type="file" accept="application/json,.json" onChange={e => { importFile(e.target.files?.[0]); e.target.value = ''; }} />
-        </label>
-      </span>
-    </div>
-  );
 
   const ov = overlay && byId.get(overlay.id);
   return (
@@ -134,7 +121,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
           </button>
           <button data-view="log" aria-current={view === 'log' ? 'page' : undefined} onClick={() => go('log')}><IcRefresh /><span className="lbl">Aggiornamenti</span></button>
           <div className="sep" />
-          <Settings onExport={exportFile} onImport={importFile} sync={sync} info={info} />
+          <Settings onExport={exportFile} onImport={importFile} onSheet={doImportSheet} sync={sync} info={info} />
         </nav>
         <div className="side-foot">
           Fonte: <a href={WR_URL} target="_blank" rel="noopener" style={{ color: 'inherit' }}>wrbuste.it</a>
@@ -152,7 +139,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
           </div>
         </div>
         {view === 'catalog' && (
-          <CatalogView rows={rows} visible={visible} st={st} filters={filters} sort={sort} banner={banner}
+          <CatalogView rows={rows} visible={visible} st={st} filters={filters} sort={sort}
             onFilters={setFilters} onSort={setSort} onToggleOwned={onToggleOwned} onStock={onStock}
             onOpen={id => setOverlay({ kind: 'detail', id })} onBuy={id => setOverlay({ kind: 'buy', id })} onGoCart={() => go('cart')} />
         )}
@@ -193,7 +180,9 @@ function SyncLine({ info, enabled }: { info: SyncInfo; enabled: boolean }) {
   return <span className={'sync-line ' + info.status} title={info.error || undefined}>{text}</span>;
 }
 
-function Settings({ onExport, onImport, sync, info }: { onExport: () => void; onImport: (f: File | undefined) => void; sync?: SyncApi; info: SyncInfo }) {
+function Settings({ onExport, onImport, onSheet, sync, info }: {
+  onExport: () => void; onImport: (f: File | undefined) => void; onSheet: (who: Who) => void; sync?: SyncApi; info: SyncInfo;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -230,6 +219,9 @@ function Settings({ onExport, onImport, sync, info }: { onExport: () => void; on
             <input className="vis-hidden" type="file" accept="application/json,.json"
               onChange={e => { setOpen(false); onImport(e.target.files?.[0]); e.target.value = ''; }} />
           </label>
+          <div className="menu-sep" />
+          <button role="menuitem" onClick={() => { setOpen(false); onSheet('bobbi'); }}>Importa dal vecchio foglio: Bobbi</button>
+          <button role="menuitem" onClick={() => { setOpen(false); onSheet('pomo'); }}>Importa dal vecchio foglio: Pomo</button>
         </div>
       )}
     </div>

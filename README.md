@@ -78,8 +78,8 @@ marks to your account (one row per person, protected by row-level security), so 
 every device. Setup: [SUPABASE.md](SUPABASE.md). Without it the app is browser-only.
 
 - **Back up / move by hand:** Impostazioni → **Esporta stato (JSON)**, then **Importa stato (JSON)** elsewhere.
-- **First visit:** the banner offers *Sono Bobbi* / *Sono Pomo* (import from the old sheet),
-  *Parto da zero*, or *Importa il mio stato* (e.g. `seed/bobbi-state-seed.json`).
+- **Old Google Sheet:** Impostazioni → **Importa dal vecchio foglio: Bobbi / Pomo** adds that person's
+  owned formats (and Bobbi's Poche/Tante) from `data/sheet-seed.json`.
 
 Code: `StateStore` in `src/lib/state.ts` (browser), `SyncedStore` in `src/lib/sync.ts` (sync rules),
 `src/lib/supabase.ts` (the Supabase backend), `supabase/schema.sql` (table + policies).
@@ -88,7 +88,7 @@ Code: `StateStore` in `src/lib/state.ts` (browser), `SyncedStore` in `src/lib/sy
 
 Send Pomo the site link. The catalogue is shared; marks are personal.
 - With sync on: add his Gmail to the Google test users (see SUPABASE.md); he signs in with Google.
-- Either way, on first visit he presses **Sono Pomo** to import his owned list from the old sheet.
+- To bring in his owned list from the old sheet: Impostazioni → **Importa dal vecchio foglio: Pomo**.
 
 ## Deploy
 

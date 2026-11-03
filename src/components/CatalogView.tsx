@@ -26,7 +26,6 @@ interface Props {
   st: State;
   filters: Filters;
   sort: Sort;
-  banner: React.ReactNode;
   onFilters: (f: Filters) => void;
   onSort: (s: Sort) => void;
   onToggleOwned: (id: string) => void;
@@ -48,7 +47,6 @@ export function CatalogView(p: Props) {
           </button>
         ))}
       </div>
-      {p.banner}
       <section className="card">
         <div className="card-tb">
           <div className="search">

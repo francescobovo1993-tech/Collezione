@@ -113,16 +113,15 @@ describe('buy flow and cart', () => {
   });
 });
 
-describe('first run', () => {
-  it('shows the import banner and Sono Bobbi imports from the sheet', () => {
+describe('old sheet import', () => {
+  it('shows no onboarding banner; Impostazioni imports Bobbi’s marks from the sheet', () => {
     const store = new MemoryStore(null);
     render(<App data={data} store={store} repo="" />);
-    expect(screen.getByText('Prima volta qui?')).toBeTruthy();
-    expect(screen.getByText('Importa il mio stato')).toBeTruthy();
-    act(() => { fireEvent.click(screen.getByRole('button', { name: 'Sono Bobbi' })); });
+    expect(screen.queryByText('Prima volta qui?')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Impostazioni/ }));
+    act(() => { fireEvent.click(screen.getByRole('menuitem', { name: 'Importa dal vecchio foglio: Bobbi' })); });
     expect(store.last.imported).toBe('bobbi');
     expect(store.last.stock['fumetti~a3-portfolio']).toBe('poche');
-    expect(screen.queryByText('Prima volta qui?')).toBeNull();
   });
 });
 

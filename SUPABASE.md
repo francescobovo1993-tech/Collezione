@@ -69,8 +69,8 @@ so they go in plain repository *variables*, not secrets.
      (the old copy is kept in the browser under `wrbuste.state.v1.backup`, just in case).
 3. Changes are saved online about half a second after you make them. Switching back to the tab
    re-reads your account, so edits from your other devices show up.
-4. Pomo: open the site, sign in with his Google account. If he has no marks yet he sees the
-   first-run banner and presses **Sono Pomo**.
+4. Pomo: open the site, sign in with his Google account, then Impostazioni →
+   **Importa dal vecchio foglio: Pomo** to bring in his owned list.
 
 ## Good to know
 
