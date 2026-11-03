@@ -124,6 +124,13 @@ export class SyncedStore implements StateStore {
       throw e instanceof Error ? e : new Error(String(e));
     }
   };
+  /** Ask the backend whether the signed-in account may edit the shared Volumi. */
+  async checkEditor(): Promise<void> {
+    const a = this.info.account;
+    if (!a) return;
+    const ok = await this.remote.isEditor(a.email).catch(() => false);
+    if (this.info.account?.id === a.id && ok !== this.info.editor) this.setInfo({ editor: ok });
+  }
   private setVolumiMap(v: Record<string, string>) {
     this.volumi = v;
     this.volumiListeners.forEach(cb => cb());
@@ -146,7 +153,12 @@ export class SyncedStore implements StateStore {
       if (document.visibilityState !== 'visible' || !this.info.account) return;
       if (this.pending) void this.flush(); else void this.pull();
     };
-    const onVisibleVolumi = () => { if (document.visibilityState === 'visible') void this.loadVolumi(); };
+    // Notes and editor rights can change elsewhere (another device, the Supabase dashboard).
+    const onVisibleVolumi = () => {
+      if (document.visibilityState !== 'visible') return;
+      void this.loadVolumi();
+      void this.checkEditor();
+    };
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', onVisible);
       document.addEventListener('visibilitychange', onVisibleVolumi);
@@ -190,9 +202,7 @@ export class SyncedStore implements StateStore {
     if (!a) { this.setInfo({ account: null, status: 'local', editor: false }); return; }
     this.setInfo({ account: a, status: 'loading', error: '', editor: false });
     void this.pull();
-    void this.remote.isEditor(a.email)
-      .then(ok => { if (this.info.account?.id === a.id) this.setInfo({ editor: ok }); })
-      .catch(() => {});
+    void this.checkEditor();
   }
 
   async pull(): Promise<void> {

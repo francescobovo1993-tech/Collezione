@@ -275,6 +275,7 @@ describe('account menu', () => {
     render(<App data={data} store={new MemoryStore(normState(bobbi))} sync={reader.api} repo="" />);
     fireEvent.click(within(row('fumetti~a4')).getByRole('button', { name: 'A4' }));
     expect(within(screen.getByRole('dialog')).queryByRole('button', { name: /Modifica|Accedi/ })).toBeNull();
+    expect(within(screen.getByRole('dialog')).getByText('Solo gli editor possono modificarli.')).toBeTruthy();
   });
 
   it('opening a reset link asks for a new password straight away', () => {

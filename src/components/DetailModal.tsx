@@ -100,6 +100,7 @@ function VolumiRow({ text, edit }: { text: string; edit: VolumiEdit }) {
         {text || 'Nessun volume annotato'}
         {edit.kind === 'edit' && <><br /><button className="btn link ghlink" onClick={() => setDraft(text)}><IcEdit />Modifica</button></>}
         {edit.kind === 'signin' && <><br /><button className="btn link ghlink" onClick={edit.onSignIn}>Accedi per modificarli</button></>}
+        {edit.kind === 'readonly' && <><br /><small className="hint">Solo gli editor possono modificarli.</small></>}
       </span>
     </div>
   );

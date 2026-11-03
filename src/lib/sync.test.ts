@@ -180,6 +180,9 @@ describe('SyncedStore', () => {
     s.start(); await s.signIn(); await tick(); await tick();
     expect(s.getInfo().editor).toBe(false);
     await expect(s.saveVolumi('fumetti~a4', 'x')).rejects.toThrow('Il tuo account non può modificare i volumi.');
+    remote.editors.add('bobbi@example.com');                                // added later, e.g. in Supabase
+    await s.checkEditor();
+    expect(s.getInfo().editor).toBe(true);
   });
 
   it('signing out flushes pending changes and returns to browser-only', async () => {
