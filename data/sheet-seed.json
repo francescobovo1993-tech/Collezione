@@ -1,0 +1,332 @@
+{
+  "fumetti~a3-portfolio": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~a4": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~album-figurine-1": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~album-figurine-2": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~album-figurine-3": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~album-figurine-4": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~bonelli": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~bonelli-book": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~bonelli-gigante": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~bonelli-speciale": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  },
+  "fumetti~cartonati-1": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~cartonati-1-plus": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~cartonati-2": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~cartonati-3": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~comics": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  },
+  "fumetti~comics-tp1": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~comics-tp2": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~comics-tp3": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~comics-tp4": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": ""
+  },
+  "fumetti~comics-tp5": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  },
+  "fumetti~comics-tp6": {
+    "bobbi": false,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~corno-cronologiche": {
+    "bobbi": false,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~diabolik": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "tante"
+  },
+  "fumetti~disney": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  },
+  "fumetti~disney-plus": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": ""
+  },
+  "fumetti~disney-2": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~diva": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~dylan-dog-fanzine": {
+    "bobbi": false,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~euracomix": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~gazzetta-tp": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~giornali-1": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~giornali-2": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~glamour-book": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~grand-hotel": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~intrepido-70": {
+    "bobbi": false,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~ken-parker-collezione": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  },
+  "fumetti~ken-parker-mondadori": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~manga": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "tante"
+  },
+  "fumetti~manga-1": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "tante"
+  },
+  "fumetti~manga-2": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~manga-speciale": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~manga-speciale-2": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "tante"
+  },
+  "fumetti~manga-speciale-3": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "tante"
+  },
+  "fumetti~manga-tp1": {
+    "bobbi": false,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~manga-tp2": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~manga-tp3": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "tante"
+  },
+  "fumetti~manga-tp4-lupo-alberto": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~manga-tp5": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~manga-tp6": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~planeta-classici": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  },
+  "fumetti~rat-man-gigante": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~rivista": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~rivista-alta": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~rivista-grande": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "fumetti~rivista-piccola": {
+    "bobbi": false,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~skorpio-lanciostory": {
+    "bobbi": false,
+    "pomo": true,
+    "nota": ""
+  },
+  "fumetti~tex-repubblica": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  },
+  "fumetti~tex-repubblica-cartonati": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~topolino-nf-dvd": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": ""
+  },
+  "fumetti~topolino-lde": {
+    "bobbi": false,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "fumetti~zio-paperone": {
+    "bobbi": true,
+    "pomo": true,
+    "nota": "poche"
+  },
+  "musica~blu-ray-steelbook": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": ""
+  },
+  "musica~nintendo-64": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "musica~vinile-10-pollici": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "musica~vinile-78-giri-piccoli": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "poche"
+  },
+  "manuale~non-wr-formato": {
+    "bobbi": true,
+    "pomo": false,
+    "nota": "tante"
+  }
+}

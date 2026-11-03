@@ -1,0 +1,188 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BuyModal } from './components/BuyModal';
+import { CartView } from './components/CartView';
+import { CatalogView } from './components/CatalogView';
+import { DetailModal } from './components/DetailModal';
+import { IcCart, IcGear, IcList, IcRefresh, Logo } from './components/icons';
+import { LogView } from './components/LogView';
+import { DEFAULT_COPY, type CopyOpts } from './lib/cart';
+import { GITHUB_REPO, STOCK_LABEL, WR_URL } from './lib/constants';
+import { fmtDate } from './lib/format';
+import { DEFAULT_SORT, filterRows, sortRows, toRows, type Filters, type Sort } from './lib/rows';
+import {
+  addPoche, clearCart, emptyState, exportState, importFromSheet, normState, removeFromCart, setCartQty, setStock, toggleOwned,
+  type StateStore, type Who,
+} from './lib/state';
+import type { Catalog, ChangelogEntry, SheetSeed, State, Stock } from './lib/types';
+
+export interface AppData { catalog: Catalog; volumi: Record<string, string>; sheet: SheetSeed; changelog: ChangelogEntry[] }
+type View = 'catalog' | 'cart' | 'log';
+type Overlay = { kind: 'detail'; id: string } | { kind: 'buy'; id: string } | null;
+const TITLES: Record<View, string> = { catalog: 'Catalogo buste', cart: 'Carrello', log: 'Aggiornamenti WR' };
+
+export function App({ data, store, repo = GITHUB_REPO }: { data: AppData; store: StateStore; repo?: string }) {
+  const [st, setSt] = useState<State>(() => store.load() ?? emptyState());
+  const [view, setView] = useState<View>('catalog');
+  const [filters, setFilters] = useState<Filters>({ q: '', show: 'all', cat: '' });
+  const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
+  const [overlay, setOverlay] = useState<Overlay>(null);
+  const [copy, setCopy] = useState<CopyOpts>(DEFAULT_COPY);
+  const [toastMsg, setToastMsg] = useState('');
+  const toastT = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const toast = useCallback((m: string) => {
+    setToastMsg(m);
+    clearTimeout(toastT.current);
+    toastT.current = setTimeout(() => setToastMsg(''), 3000);
+  }, []);
+
+  /** The only way to change personal state: a pure function from old state to a new object. */
+  const update = useCallback((fn: (s: State) => State) => {
+    setSt(prev => {
+      const next = fn(prev);
+      store.save(next);
+      return next;
+    });
+  }, [store]);
+
+  const rows = useMemo(() => toRows(data.catalog, data.volumi), [data]);
+  const byId = useMemo(() => new Map(rows.map(r => [r.id, r])), [rows]);
+  const visible = useMemo(() => sortRows(filterRows(rows, st, filters), st, sort), [rows, st, filters, sort]);
+
+  const go = (v: View) => { setView(v); setOverlay(null); window.scrollTo?.(0, 0); };
+  const onToggleOwned = useCallback((id: string) => update(s => toggleOwned(s, id)), [update]);
+  const onStock = useCallback((id: string, v: Stock | '') => {
+    update(s => setStock(s, id, v));
+    toast(`${byId.get(id)?.name ?? id}: ${STOCK_LABEL[v]}`);
+  }, [update, toast, byId]);
+
+  const importFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const raw = JSON.parse(await file.text());
+      if (!raw || typeof raw !== 'object' || !('owned' in raw || 'stock' in raw || 'cart' in raw)) throw new Error('shape');
+      const next = normState(raw);
+      update(() => ({ ...next, imported: next.imported ?? 'file' }));
+      toast(`Stato importato: ${Object.keys(next.owned).length} possedute, ${Object.keys(next.cart).length} nel carrello.`);
+    } catch {
+      toast('File non valido: serve un JSON esportato da questa app.');
+    }
+  };
+  const exportFile = () => {
+    const url = URL.createObjectURL(new Blob([exportState(st)], { type: 'application/json' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: `buste-wr-stato-${new Date().toISOString().slice(0, 10)}.json` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const doImportSheet = (who: Who) => {
+    update(s => importFromSheet(s, who, data.sheet));
+    toast(who === 'none' ? 'Si parte da zero.' : 'Buste importate dal foglio.');
+  };
+
+  const active = rows.filter(r => !r.removed).length;
+  const ownedN = Object.keys(st.owned).filter(id => byId.has(id)).length;
+  const pocheN = Object.entries(st.stock).filter(([id, v]) => v === 'poche' && byId.has(id)).length;
+  const cartItems = Object.values(st.cart).filter(c => c.qty > 0);
+  const cartPcs = cartItems.reduce((s, c) => s + c.qty, 0);
+
+  const banner = !st.imported && (
+    <div className="notice import">
+      <span className="grow"><b>Prima volta qui?</b> Importa le buste segnate nel vecchio foglio «Buste Manga».</span>
+      <span className="btns">
+        <button className="btn primary" onClick={() => doImportSheet('bobbi')}>Sono Bobbi</button>
+        <button className="btn" onClick={() => doImportSheet('pomo')}>Sono Pomo</button>
+        <button className="btn" onClick={() => doImportSheet('none')}>Parto da zero</button>
+        <label className="btn">Importa il mio stato
+          <input className="vis-hidden" type="file" accept="application/json,.json" onChange={e => { importFile(e.target.files?.[0]); e.target.value = ''; }} />
+        </label>
+      </span>
+    </div>
+  );
+
+  const ov = overlay && byId.get(overlay.id);
+  return (
+    <div className="app">
+      <aside className="side">
+        <div className="brand"><Logo /><div><b>Buste WR</b><span>Catalogo personale</span></div></div>
+        <nav className="nav" aria-label="Sezioni">
+          <button data-view="catalog" aria-current={view === 'catalog' ? 'page' : undefined} onClick={() => go('catalog')}><IcList /><span className="lbl">Catalogo</span></button>
+          <button data-view="cart" aria-current={view === 'cart' ? 'page' : undefined} onClick={() => go('cart')}>
+            <IcCart /><span className="lbl">Carrello</span>{cartItems.length > 0 && <span className="badge">{cartItems.length}</span>}
+          </button>
+          <button data-view="log" aria-current={view === 'log' ? 'page' : undefined} onClick={() => go('log')}><IcRefresh /><span className="lbl">Aggiornamenti</span></button>
+          <div className="sep" />
+          <Settings onExport={exportFile} onImport={importFile} />
+        </nav>
+        <div className="side-foot">
+          Fonte: <a href={WR_URL} target="_blank" rel="noopener" style={{ color: 'inherit' }}>wrbuste.it</a>
+          {data.changelog[0] && <><br />Catalogo aggiornato il {fmtDate(data.changelog[0].at)}</>}
+          <br />Le tue spunte sono salvate solo in questo browser.
+        </div>
+      </aside>
+
+      <main className="main">
+        <div className="title-row">
+          <h1>{TITLES[view]}</h1>
+          <div className="stats">
+            <span><b>{active}</b> formati</span><span><b>{ownedN}</b> possedute</span><span><b>{pocheN}</b> poche</span>
+            <span><b>{cartPcs.toLocaleString('it-IT')}</b> buste nel carrello</span>
+          </div>
+        </div>
+        {view === 'catalog' && (
+          <CatalogView rows={rows} visible={visible} st={st} filters={filters} sort={sort} banner={banner}
+            onFilters={setFilters} onSort={setSort} onToggleOwned={onToggleOwned} onStock={onStock}
+            onOpen={id => setOverlay({ kind: 'detail', id })} onBuy={id => setOverlay({ kind: 'buy', id })} onGoCart={() => go('cart')} />
+        )}
+        {view === 'cart' && (
+          <CartView st={st} byId={byId} copy={copy} onCopyOpts={setCopy} toast={toast} onGoCatalog={() => go('catalog')}
+            onQty={(id, q) => update(s => setCartQty(s, id, q))}
+            onRemove={id => update(s => removeFromCart(s, id))}
+            onAddPoche={() => { const n = addPoche(st, data.catalog).added; update(s => addPoche(s, data.catalog).state); toast(`${n} formati aggiunti al carrello.`); }}
+            onClear={() => { update(clearCart); toast('Carrello svuotato.'); }} />
+        )}
+        {view === 'log' && <LogView log={data.changelog} />}
+      </main>
+
+      {overlay?.kind === 'detail' && ov && (
+        <DetailModal r={ov} owned={!!st.owned[ov.id]} stock={st.stock[ov.id] ?? ''} qty={st.cart[ov.id]?.qty ?? 0} repo={repo}
+          onClose={() => setOverlay(null)} onToggleOwned={() => onToggleOwned(ov.id)}
+          onStock={v => update(s => setStock(s, ov.id, v))} onBuy={() => setOverlay({ kind: 'buy', id: ov.id })} />
+      )}
+      {overlay?.kind === 'buy' && ov && (
+        <BuyModal key={ov.id} r={ov} qty={st.cart[ov.id]?.qty ?? 0} onClose={() => setOverlay(null)}
+          onSave={q => { update(s => setCartQty(s, ov.id, q)); setOverlay(null); toast(`${q} × ${ov.name} nel carrello.`); }}
+          onRemove={() => { update(s => removeFromCart(s, ov.id)); setOverlay(null); toast('Tolto dal carrello.'); }} />
+      )}
+      <div id="toast" role="status" aria-live="polite" hidden={!toastMsg}>{toastMsg}</div>
+    </div>
+  );
+}
+
+function Settings({ onExport, onImport }: { onExport: () => void; onImport: (f: File | undefined) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  return (
+    <div className="settings" ref={ref}>
+      <button aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen(o => !o)} style={{ width: '100%' }}>
+        <IcGear /><span className="lbl">Impostazioni</span>
+      </button>
+      {open && (
+        <div className="menu anchored" role="menu">
+          <button role="menuitem" onClick={() => { setOpen(false); onExport(); }}>Esporta stato (JSON)</button>
+          <label role="menuitem">Importa stato (JSON)
+            <input className="vis-hidden" type="file" accept="application/json,.json"
+              onChange={e => { setOpen(false); onImport(e.target.files?.[0]); e.target.value = ''; }} />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+}
