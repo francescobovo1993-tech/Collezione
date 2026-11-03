@@ -11,7 +11,7 @@ export interface Filters { q: string; show: Show }
 export type SortKey = 'owned' | 'stock' | 'name' | 'a' | 'b' | 'cat' | 'price' | 'volumi' | 'notes' | 'cart';
 export interface Sort { key: SortKey; dir: 1 | -1 }
 
-export const DEFAULT_SORT: Sort = { key: 'a', dir: -1 };
+export const DEFAULT_SORT: Sort = { key: 'a', dir: 1 }; // Lato A, smallest first
 
 export function filterRows(rows: Row[], st: State, f: Filters, show: Show = f.show): Row[] {
   const q = f.q.trim().toLowerCase().replace(/×/g, 'x');

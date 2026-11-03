@@ -99,8 +99,8 @@ const currentSortLabel = (sort: Sort, fallback: string) =>
 
 /** Sort choices for the mobile sheet: field + direction in one line, like Revolut's "Price (from low to high)". */
 export const SORT_OPTIONS: { label: string; sort: Sort }[] = [
-  { label: 'Lato A: dal più grande', sort: { key: 'a', dir: -1 } },
   { label: 'Lato A: dal più piccolo', sort: { key: 'a', dir: 1 } },
+  { label: 'Lato A: dal più grande', sort: { key: 'a', dir: -1 } },
   { label: 'Lato B: dal più grande', sort: { key: 'b', dir: -1 } },
   { label: 'Lato B: dal più piccolo', sort: { key: 'b', dir: 1 } },
   { label: 'Nome (A → Z)', sort: { key: 'name', dir: 1 } },

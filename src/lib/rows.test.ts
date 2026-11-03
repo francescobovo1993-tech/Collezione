@@ -20,17 +20,17 @@ describe('ids', () => {
 });
 
 describe('sort', () => {
-  it('defaults to Lato A descending with empty values last', () => {
+  it('defaults to Lato A ascending (smallest first) with empty values last', () => {
     const s = sortRows(rows, emptyState(), DEFAULT_SORT);
     const as = s.map(r => r.a);
     const firstNull = as.indexOf(null);
     expect(firstNull).toBeGreaterThan(0);
     expect(as.slice(firstNull).every(v => v == null)).toBe(true);
     const nums = as.slice(0, firstNull) as number[];
-    expect([...nums].sort((x, y) => y - x)).toEqual(nums);
+    expect([...nums].sort((x, y) => x - y)).toEqual(nums);
   });
-  it('keeps empty values last when ascending too', () => {
-    const as = sortRows(rows, emptyState(), { key: 'a', dir: 1 }).map(r => r.a);
+  it('keeps empty values last when descending too', () => {
+    const as = sortRows(rows, emptyState(), { key: 'a', dir: -1 }).map(r => r.a);
     expect(as[as.length - 1]).toBeNull();
     expect(as[0]).not.toBeNull();
   });

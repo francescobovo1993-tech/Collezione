@@ -323,11 +323,11 @@ describe('mobile chrome', () => {
   it('Ordina bottom sheet: one tap applies and closes; red dot when not default', () => {
     setup();
     const btn = () => screen.getByRole('button', { name: /^Ordina:/ });
-    expect(btn().getAttribute('aria-label')).toBe('Ordina: Lato A: dal più grande');
+    expect(btn().getAttribute('aria-label')).toBe('Ordina: Lato A: dal più piccolo');
     expect(btn().querySelector('.dot-on')).toBeNull();
     fireEvent.click(btn());
     const sheet = screen.getByRole('dialog', { name: 'Ordina per' });
-    expect(within(sheet).getByRole('radio', { name: 'Lato A: dal più grande' }).getAttribute('aria-checked')).toBe('true');
+    expect(within(sheet).getByRole('radio', { name: 'Lato A: dal più piccolo' }).getAttribute('aria-checked')).toBe('true');
     expect(within(sheet).queryByRole('button', { name: 'Applica' })).toBeNull();
     fireEvent.click(within(sheet).getByRole('radio', { name: 'Nome (A → Z)' }));
     expect(screen.queryByRole('dialog')).toBeNull();
