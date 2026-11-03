@@ -304,7 +304,6 @@ a.btn{text-decoration:none;color:inherit}
 .mobile-flex{display:none}
 .icbtn{border:0;background:var(--pill);color:var(--ink);border-radius:99px;width:40px;height:40px;place-items:center;position:relative;flex:0 0 40px;padding:0}
 .icbtn:hover{background:var(--pill-hover)}
-.icbtn .dot-on{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 2px var(--pill)}
 .avatar{width:24px;height:24px;border-radius:50%;background:var(--blue);color:var(--on-blue);font-size:11px;font-weight:700;display:grid;place-items:center;flex:0 0 24px;letter-spacing:.02em}
 @media (max-width:860px){ .avatar{width:32px;height:32px;flex-basis:32px;font-size:13px} }
 .choice[aria-checked="true"] .t b{color:var(--blue)}

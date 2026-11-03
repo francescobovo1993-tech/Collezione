@@ -6,7 +6,7 @@ import { DEFAULT_SORT, filterRows, sortRows, toRows, type Filters } from './rows
 import { emptyState, normState } from './state';
 
 const rows = toRows(data.catalog, data.volumi);
-const F: Filters = { q: '', show: 'all', cat: '' };
+const F: Filters = { q: '', show: 'all' };
 
 describe('ids', () => {
   it('slug strips accents and punctuation', () => {
@@ -48,6 +48,10 @@ describe('filter', () => {
     expect(filterRows(rows, emptyState(), { ...F, q: '140x178' }).map(r => r.id)).toContain('fumetti~manga-tp1');
     expect(filterRows(rows, emptyState(), { ...F, q: '140×178' }).map(r => r.id)).toContain('fumetti~manga-tp1');
   });
+  it('matches category names', () => {
+    expect(filterRows(rows, emptyState(), { ...F, q: 'chiusura laterale' }).map(r => r.id).sort())
+      .toEqual(['laterale~bonelli', 'laterale~bonelli-speciale', 'laterale~diabolik']);
+  });
   it('matches volumi text', () => {
     expect(filterRows(rows, emptyState(), { ...F, q: 'corto maltese' }).map(r => r.id)).toContain('fumetti~a3-portfolio-2');
   });
@@ -58,6 +62,5 @@ describe('filter', () => {
     expect(filterRows(rows, st, F, 'poche').map(r => r.id)).toEqual(['fumetti~a4']);
     expect(filterRows(rows, st, F, 'tante').map(r => r.id)).toEqual(['fumetti~a3']);
     expect(filterRows(rows, st, F, 'cart').map(r => r.id)).toEqual(['fumetti~a3']);
-    expect(filterRows(rows, st, { ...F, cat: 'laterale' }).length).toBe(3);
   });
 });

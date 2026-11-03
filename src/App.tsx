@@ -45,7 +45,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
   // State that arrives on its own (another device, first sign-in) replaces what's on screen.
   useEffect(() => store.subscribe?.(s => setSt(s)), [store]);
   const [view, setView] = useState<View>('catalog');
-  const [filters, setFilters] = useState<Filters>({ q: '', show: 'all', cat: '' });
+  const [filters, setFilters] = useState<Filters>({ q: '', show: 'all' });
   const [sort, setSort] = useState<Sort>(DEFAULT_SORT);
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [copy, setCopy] = useState<CopyOpts>(DEFAULT_COPY);

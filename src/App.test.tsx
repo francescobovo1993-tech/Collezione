@@ -332,13 +332,9 @@ describe('mobile chrome', () => {
     expect(names).toEqual(['220x325 mm', '240x270 mm']);
   });
 
-  it('Filtri sheet picks a category', () => {
+  it('no category filter anywhere', () => {
     setup();
-    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
-    const sheet = screen.getByRole('dialog');
-    fireEvent.click(within(sheet).getByRole('radio', { name: 'Chiusura laterale' }));
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Mostra 3 formati' }));
-    expect(document.querySelectorAll('tbody tr')).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'Filtri: Chiusura laterale' })).toBeTruthy();
+    expect(screen.queryByRole('combobox', { name: 'Categoria' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Filtri/ })).toBeNull();
   });
 });

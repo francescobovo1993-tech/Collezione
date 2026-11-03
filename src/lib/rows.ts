@@ -7,7 +7,7 @@ export const toRows = (catalog: Catalog, volumi: Record<string, string>, overrid
   Object.entries(catalog).map(([id, e]) => ({ ...e, id, volumi: overrides[id] ?? volumi[id] ?? '' }));
 
 export type Show = 'all' | 'owned' | 'notowned' | 'poche' | 'tante' | 'cart';
-export interface Filters { q: string; show: Show; cat: string }
+export interface Filters { q: string; show: Show }
 export type SortKey = 'owned' | 'stock' | 'name' | 'a' | 'b' | 'cat' | 'price' | 'volumi' | 'notes' | 'cart';
 export interface Sort { key: SortKey; dir: 1 | -1 }
 
@@ -16,7 +16,6 @@ export const DEFAULT_SORT: Sort = { key: 'a', dir: -1 };
 export function filterRows(rows: Row[], st: State, f: Filters, show: Show = f.show): Row[] {
   const q = f.q.trim().toLowerCase().replace(/×/g, 'x');
   let out = rows;
-  if (f.cat) out = out.filter(r => r.cat === f.cat);
   if (show === 'owned') out = out.filter(r => st.owned[r.id]);
   if (show === 'notowned') out = out.filter(r => !st.owned[r.id]);
   if (show === 'poche' || show === 'tante') out = out.filter(r => st.stock[r.id] === show);
