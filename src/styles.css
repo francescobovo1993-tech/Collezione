@@ -211,18 +211,29 @@ tbody tr:last-child td{border-bottom:0}
 
 @media (max-width:860px){
   .app{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start}
-  .side{position:sticky;top:0;z-index:6;height:auto;flex-direction:row;align-items:center;gap:8px;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));padding-top:calc(10px + env(safe-area-inset-top,0px));background:var(--bg);overflow-x:auto}
-  .brand span,.side-foot{display:none}
+  .side{position:sticky;top:0;z-index:6;height:auto;flex-direction:row;align-items:center;gap:6px;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(8px,env(safe-area-inset-left,0px));padding-top:calc(8px + env(safe-area-inset-top,0px));background:var(--bg)}
+  .side .brand{padding:0}
+  .side .brand div span,.side-foot,.side > nav.nav,.nav-extra .sep{display:none}
   .brand b{font-size:15px;white-space:nowrap}
-  .logo{width:34px;height:34px;flex-basis:34px;border-radius:10px}
-  .nav{display:flex;gap:4px;margin-left:auto}
-  .nav button{padding:8px 10px;white-space:nowrap}
-  .nav button .lbl{display:none}
-  .nav button[data-view="cart"] .lbl{display:inline}
+  .logo{width:32px;height:32px;flex-basis:32px;border-radius:10px}
+  .nav-extra{margin-left:auto}
+  .nav-extra .settings > button{padding:6px;border-radius:99px}
+  .nav-extra .settings > button .lbl,.nav-extra .sync-dot{display:none}
+  .stats{display:none}
+  h1{font-size:26px}
   .main{padding:8px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
-  .segs{flex-wrap:nowrap;overflow-x:auto;margin:12px -16px;padding:0 16px}
+  .segs{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px 12px;padding:0 16px;scrollbar-width:none}
+  .segs::-webkit-scrollbar{display:none}
+  .seg{padding:8px 14px}
   .mobile-only{display:inline-block}
-  .search{flex:1 1 100%}
+  .desktop-only{display:none}
+  /* search first, quick filters under it, then the list (Stays-style) */
+  .catalog{display:flex;flex-direction:column;margin-top:12px}
+  .catalog > .card{display:contents}
+  .card-tb{order:0;flex-wrap:nowrap;padding-bottom:10px}
+  .catalog > .segs{order:1}
+  .tablewrap{order:2}
+  .search{flex:1 1 auto}
   .card{background:transparent;padding:0}
   .tablewrap{max-height:none;overflow:visible;margin:0;padding:0}
   table{min-width:0}
@@ -242,7 +253,8 @@ tbody tr:last-child td{border-bottom:0}
   td.c-stock{grid-column:1;grid-row:4}
   td.c-buy{grid-column:2;grid-row:4;text-align:right}
   .dims-m{display:inline!important}
-  .card-tb .count{width:100%}
+  /* bottom sheets */
+  .modal.sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:88vh;border-radius:24px 24px 0 0;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
 }
 .dims-m{display:none;color:var(--muted);font-weight:400;margin-right:6px}
 @media (prefers-reduced-motion:no-preference){ .modal,.panel,.menu{animation:pop .14s ease-out} @keyframes pop{from{opacity:0;transform:translate(var(--tx,0),var(--ty,0)) scale(.98)}} .modal{--tx:-50%;--ty:-50%} }
@@ -285,3 +297,28 @@ a.btn{text-decoration:none;color:inherit}
 .auth-links{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:space-between;align-items:center;margin-top:14px;font-size:14px;color:var(--muted)}
 .auth-links .btn.link{font-size:14px;padding:0}
 .hint{font-size:13px;color:var(--faint)}
+
+/* ---------- mobile chrome: burger, full-screen menu, icon buttons ---------- */
+.burger{all:unset;cursor:pointer;display:none;place-items:center;width:40px;height:40px;border-radius:12px;color:var(--ink);flex:0 0 40px}
+.burger:hover{background:var(--pill)} .burger:focus-visible{outline:2px solid var(--blue)}
+.mobile-flex{display:none}
+.icbtn{border:0;background:var(--pill);color:var(--ink);border-radius:99px;width:40px;height:40px;place-items:center;position:relative;flex:0 0 40px;padding:0}
+.icbtn:hover{background:var(--pill-hover)}
+.icbtn .dot-on{position:absolute;top:7px;right:7px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 2px var(--pill)}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--blue);color:var(--on-blue);font-size:11px;font-weight:700;display:grid;place-items:center;flex:0 0 24px;letter-spacing:.02em}
+@media (max-width:860px){ .avatar{width:32px;height:32px;flex-basis:32px;font-size:13px} }
+.choice[aria-checked="true"] .t b{color:var(--blue)}
+.choice .chev{color:var(--blue)}
+.mnav{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column;padding:calc(8px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));overflow:auto}
+.mnav-top{display:flex;align-items:center;gap:6px;margin-bottom:18px}
+.mnav-top .mx{margin:0;width:40px;height:40px}
+.mnav-top .brand{padding:0}
+.mnav-list{display:grid;gap:2px;padding-left:8px}
+.mnav-list button{padding:13px 14px;font-size:16px}
+.mnav-foot{margin-top:auto;padding:16px 16px 0;font-size:13px;color:var(--muted);line-height:1.5}
+@media (min-width:861px){ .mnav{display:none} }
+@media (prefers-reduced-motion:no-preference){
+  .mnav{animation:fade .16s ease-out} @keyframes fade{from{opacity:0}}
+  .modal.sheet{--tx:0;--ty:24px}
+}
+@media (max-width:860px){ .burger{display:grid} .mobile-flex{display:inline-grid} }

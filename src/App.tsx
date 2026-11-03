@@ -3,7 +3,7 @@ import { BuyModal } from './components/BuyModal';
 import { CartView } from './components/CartView';
 import { CatalogView } from './components/CatalogView';
 import { DetailModal } from './components/DetailModal';
-import { IcCart, IcGear, IcList, IcRefresh, Logo } from './components/icons';
+import { IcCart, IcGear, IcList, IcMenu, IcRefresh, IcX, Logo } from './components/icons';
 import { LogView } from './components/LogView';
 import { DEFAULT_COPY, type CopyOpts } from './lib/cart';
 import { GITHUB_REPO, STOCK_LABEL, WR_URL } from './lib/constants';
@@ -80,7 +80,8 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
   const byId = useMemo(() => new Map(rows.map(r => [r.id, r])), [rows]);
   const visible = useMemo(() => sortRows(filterRows(rows, st, filters), st, sort), [rows, st, filters, sort]);
 
-  const go = (v: View) => { setView(v); setOverlay(null); window.scrollTo?.(0, 0); };
+  const [menuOpen, setMenuOpen] = useState(false);
+  const go = (v: View) => { setView(v); setOverlay(null); setMenuOpen(false); window.scrollTo?.(0, 0); };
   const onToggleOwned = useCallback((id: string) => update(s => toggleOwned(s, id)), [update]);
   const onStock = useCallback((id: string, v: Stock | '') => {
     update(s => setStock(s, id, v));
@@ -111,27 +112,34 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
   const cartPcs = cartItems.reduce((s, c) => s + c.qty, 0);
 
 
+  const foot = (
+    <>
+      Fonte: <a href={WR_URL} target="_blank" rel="noopener" style={{ color: 'inherit' }}>wrbuste.it</a>
+      {data.changelog[0] && <><br />Catalogo aggiornato il {fmtDate(data.changelog[0].at)}</>}
+      <br /><SyncLine info={info} enabled={!!sync} />
+    </>
+  );
   const ov = (overlay?.kind === 'detail' || overlay?.kind === 'buy') ? byId.get(overlay.id) : undefined;
   return (
     <div className="app">
       <aside className="side">
+        <button className="burger" aria-label="Apri menu" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><IcMenu /></button>
         <div className="brand"><Logo /><div><b>Buste WR</b><span>Catalogo personale</span></div></div>
         <nav className="nav" aria-label="Sezioni">
-          <button data-view="catalog" aria-current={view === 'catalog' ? 'page' : undefined} onClick={() => go('catalog')}><IcList /><span className="lbl">Catalogo</span></button>
-          <button data-view="cart" aria-current={view === 'cart' ? 'page' : undefined} onClick={() => go('cart')}>
-            <IcCart /><span className="lbl">Carrello</span>{cartItems.length > 0 && <span className="badge">{cartItems.length}</span>}
-          </button>
-          <button data-view="log" aria-current={view === 'log' ? 'page' : undefined} onClick={() => go('log')}><IcRefresh /><span className="lbl">Aggiornamenti</span></button>
+          <NavItems view={view} go={go} cartCount={cartItems.length} />
+        </nav>
+        <div className="nav nav-extra">
           <div className="sep" />
           <Settings onExport={exportFile} onImport={importFile} sync={sync} info={info}
             onLogin={() => setOverlay({ kind: 'login' })} onPassword={() => setOverlay({ kind: 'password' })} />
-        </nav>
-        <div className="side-foot">
-          Fonte: <a href={WR_URL} target="_blank" rel="noopener" style={{ color: 'inherit' }}>wrbuste.it</a>
-          {data.changelog[0] && <><br />Catalogo aggiornato il {fmtDate(data.changelog[0].at)}</>}
-          <br /><SyncLine info={info} enabled={!!sync} />
         </div>
+        <div className="side-foot">{foot}</div>
       </aside>
+      {menuOpen && (
+        <MobileMenu onClose={() => setMenuOpen(false)} foot={foot}>
+          <NavItems view={view} go={go} cartCount={cartItems.length} />
+        </MobileMenu>
+      )}
 
       <main className="main">
         <div className="title-row">
@@ -144,7 +152,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
         {view === 'catalog' && (
           <CatalogView rows={rows} visible={visible} st={st} filters={filters} sort={sort}
             onFilters={setFilters} onSort={setSort} onToggleOwned={onToggleOwned} onStock={onStock}
-            onOpen={id => setOverlay({ kind: 'detail', id })} onBuy={id => setOverlay({ kind: 'buy', id })} onGoCart={() => go('cart')} />
+            onOpen={id => setOverlay({ kind: 'detail', id })} onBuy={id => setOverlay({ kind: 'buy', id })} />
         )}
         {view === 'cart' && (
           <CartView st={st} byId={byId} copy={copy} onCopyOpts={setCopy} toast={toast} onGoCatalog={() => go('catalog')}
@@ -207,8 +215,9 @@ function Settings({ onExport, onImport, sync, info, onLogin, onPassword }: {
   }, [open]);
   return (
     <div className="settings" ref={ref}>
-      <button aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen(o => !o)} style={{ width: '100%' }}>
-        <IcGear /><span className="lbl">Impostazioni</span>
+      <button aria-label="Impostazioni" aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen(o => !o)} style={{ width: '100%' }}>
+        {info.account ? <span className="avatar" aria-hidden="true">{initials(info.account.name || info.account.email)}</span> : <IcGear />}
+        <span className="lbl">Impostazioni</span>
         {sync && info.account && <span className={'sync-dot ' + info.status} aria-label={SYNC_TEXT[info.status]} />}
       </button>
       {open && (
@@ -238,3 +247,38 @@ function Settings({ onExport, onImport, sync, info, onLogin, onPassword }: {
   );
 }
 
+const initials = (s: string) =>
+  s.split(/[\s@._-]+/).filter(Boolean).slice(0, 2).map(w => w[0]!.toUpperCase()).join('') || '?';
+
+function NavItems({ view, go, cartCount }: { view: View; go: (v: View) => void; cartCount: number }) {
+  return (
+    <>
+      <button data-view="catalog" aria-current={view === 'catalog' ? 'page' : undefined} onClick={() => go('catalog')}><IcList /><span className="lbl">Catalogo</span></button>
+      <button data-view="cart" aria-current={view === 'cart' ? 'page' : undefined} onClick={() => go('cart')}>
+        <IcCart /><span className="lbl">Carrello</span>{cartCount > 0 && <span className="badge">{cartCount}</span>}
+      </button>
+      <button data-view="log" aria-current={view === 'log' ? 'page' : undefined} onClick={() => go('log')}><IcRefresh /><span className="lbl">Aggiornamenti</span></button>
+    </>
+  );
+}
+
+/** Mobile: full-screen menu opened by the burger, like Revolut's back office. */
+function MobileMenu({ onClose, foot, children }: { onClose: () => void; foot: React.ReactNode; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.querySelector<HTMLElement>('[aria-current="page"]')?.focus();
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', k);
+    return () => document.removeEventListener('keydown', k);
+  }, [onClose]);
+  return (
+    <div ref={ref} className="mnav" role="dialog" aria-modal="true" aria-label="Menu">
+      <div className="mnav-top">
+        <button className="mx" aria-label="Chiudi menu" onClick={onClose}><IcX /></button>
+        <div className="brand"><Logo /><div><b>Buste WR</b><span>Catalogo personale</span></div></div>
+      </div>
+      <nav className="nav mnav-list" aria-label="Sezioni">{children}</nav>
+      <div className="mnav-foot">{foot}</div>
+    </div>
+  );
+}

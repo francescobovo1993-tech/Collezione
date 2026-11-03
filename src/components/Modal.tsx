@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { IcX } from './icons';
 
-export function Modal({ labelledBy, wide, onClose, children }: { labelledBy: string; wide?: boolean; onClose: () => void; children: React.ReactNode }) {
+export function Modal({ labelledBy, wide, sheet, onClose, children }: { labelledBy: string; wide?: boolean; sheet?: boolean; onClose: () => void; children: React.ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
@@ -16,7 +16,7 @@ export function Modal({ labelledBy, wide, onClose, children }: { labelledBy: str
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div ref={ref} className={'modal' + (wide ? ' wide' : '')} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
+      <div ref={ref} className={'modal' + (wide ? ' wide' : '') + (sheet ? ' sheet' : '')} role="dialog" aria-modal="true" aria-labelledby={labelledBy}>
         <button className="mx" aria-label="Chiudi" onClick={onClose}><IcX /></button>
         {children}
       </div>

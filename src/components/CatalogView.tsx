@@ -2,7 +2,9 @@ import { CATS, STOCK_LABEL } from '../lib/constants';
 import { dimsOf, eur } from '../lib/format';
 import { filterRows, type Filters, type Show, type Sort, type SortKey } from '../lib/rows';
 import type { Row, State, Stock } from '../lib/types';
-import { IcCart, IcDown, IcSearch, IcSort, IcUp } from './icons';
+import { useState } from 'react';
+import { IcCheck, IcDown, IcFilter, IcSearch, IcSort, IcSortArrows, IcUp } from './icons';
+import { Modal } from './Modal';
 
 export const COLS: { k: SortKey; label: string; cls: string; sortLabel: string }[] = [
   { k: 'owned', label: 'Ce l’ho', cls: 'c-own', sortLabel: 'Possedute prima' },
@@ -32,14 +34,15 @@ interface Props {
   onStock: (id: string, v: Stock | '') => void;
   onOpen: (id: string) => void;
   onBuy: (id: string) => void;
-  onGoCart: () => void;
 }
 
 export function CatalogView(p: Props) {
   const { st, filters, sort } = p;
   const clickHead = (k: SortKey) => p.onSort(sort.key === k ? { key: k, dir: (-sort.dir) as 1 | -1 } : { key: k, dir: 1 });
+  const [sheet, setSheet] = useState<'filter' | 'sort' | null>(null);
+  const sortLabel = COLS.find(c => c.k === sort.key)?.sortLabel ?? '';
   return (
-    <div>
+    <div className="catalog">
       <div className="segs" role="group" aria-label="Filtra">
         {SHOWS.map(([k, label]) => (
           <button key={k} className="seg" aria-pressed={filters.show === k} onClick={() => p.onFilters({ ...filters, show: k })}>
@@ -54,20 +57,17 @@ export function CatalogView(p: Props) {
             <input type="search" placeholder="Cerca" aria-label="Cerca formato, volume o misura" value={filters.q}
               onChange={e => p.onFilters({ ...filters, q: e.target.value })} />
           </div>
-          <select className="selpill" aria-label="Categoria" value={filters.cat} onChange={e => p.onFilters({ ...filters, cat: e.target.value })}>
+          <select className="selpill desktop-only" aria-label="Categoria" value={filters.cat} onChange={e => p.onFilters({ ...filters, cat: e.target.value })}>
             <option value="">Tutte le categorie</option>
             {Object.entries(CATS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <select className="selpill mobile-only" aria-label="Ordina per" value={`${sort.key}:${sort.dir}`}
-            onChange={e => { const [k, d] = e.target.value.split(':'); p.onSort({ key: k as SortKey, dir: +d as 1 | -1 }); }}>
-            {COLS.flatMap(c => [
-              <option key={c.k + 'u'} value={`${c.k}:1`}>{c.sortLabel} ↑</option>,
-              <option key={c.k + 'd'} value={`${c.k}:-1`}>{c.sortLabel} ↓</option>,
-            ])}
-          </select>
-          <span className="count">{p.visible.length} di {p.rows.length}</span>
-          <span className="spacer" />
-          <button className="btn" onClick={p.onGoCart}><IcCart s={16} />Carrello</button>
+          <span className="count desktop-only">{p.visible.length} di {p.rows.length}</span>
+          <button className="icbtn mobile-flex" aria-label={`Filtri${filters.cat ? `: ${CATS[filters.cat]}` : ''}`} onClick={() => setSheet('filter')}>
+            <IcFilter />{filters.cat && <span className="dot-on" />}
+          </button>
+          <button className="icbtn mobile-flex" aria-label={`Ordina: ${sortLabel} ${sort.dir > 0 ? 'crescente' : 'decrescente'}`} onClick={() => setSheet('sort')}>
+            <IcSortArrows />
+          </button>
         </div>
         <div className="tablewrap">
           <table>
@@ -96,6 +96,42 @@ export function CatalogView(p: Props) {
           </table>
         </div>
       </section>
+      {sheet === 'filter' && (
+        <Modal labelledBy="filterTitle" sheet onClose={() => setSheet(null)}>
+          <h2 id="filterTitle">Filtri</h2>
+          <div className="group-label" style={{ marginTop: 8 }}>Categoria</div>
+          <div className="group" role="radiogroup" aria-label="Categoria">
+            {[['', 'Tutte le categorie'], ...Object.entries(CATS)].map(([k, v]) => (
+              <button key={k || 'all'} className="choice" role="radio" aria-checked={filters.cat === k}
+                onClick={() => p.onFilters({ ...filters, cat: k })}>
+                <span className="t"><b>{v}</b></span>
+                <span className="chev">{filters.cat === k && <IcCheck />}</span>
+              </button>
+            ))}
+          </div>
+          <div className="actions">
+            <button className="btn primary wide" onClick={() => setSheet(null)}>Mostra {p.visible.length} formati</button>
+          </div>
+        </Modal>
+      )}
+      {sheet === 'sort' && (
+        <Modal labelledBy="sortTitle" sheet onClose={() => setSheet(null)}>
+          <h2 id="sortTitle">Ordina per</h2>
+          <div className="opts" role="group" aria-label="Direzione" style={{ margin: '8px 0 14px' }}>
+            <button className="opt" aria-pressed={sort.dir > 0} onClick={() => p.onSort({ ...sort, dir: 1 })}>Crescente ↑</button>
+            <button className="opt" aria-pressed={sort.dir < 0} onClick={() => p.onSort({ ...sort, dir: -1 })}>Decrescente ↓</button>
+          </div>
+          <div className="group" role="radiogroup" aria-label="Ordina per">
+            {COLS.map(c => (
+              <button key={c.k} className="choice" role="radio" aria-checked={sort.key === c.k}
+                onClick={() => { p.onSort({ key: c.k, dir: sort.dir }); setSheet(null); }}>
+                <span className="t"><b>{c.sortLabel}</b></span>
+                <span className="chev">{sort.key === c.k && <IcCheck />}</span>
+              </button>
+            ))}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

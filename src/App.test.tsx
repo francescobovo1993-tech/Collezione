@@ -299,3 +299,46 @@ describe('account menu', () => {
     expect(within(row('fumetti~a3')).getByRole('switch').getAttribute('aria-checked')).toBe('true');
   });
 });
+
+describe('mobile chrome', () => {
+  it('burger opens a full-screen menu that navigates and closes', () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Apri menu' }));
+    const menu = screen.getByRole('dialog', { name: 'Menu' });
+    expect(within(menu).getByRole('button', { name: /Catalogo/ }).getAttribute('aria-current')).toBe('page');
+    expect(within(menu).getByRole('button', { name: /Carrello/ }).textContent).toContain('7');
+    fireEvent.click(within(menu).getByRole('button', { name: /Aggiornamenti/ }));
+    expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull();
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Aggiornamenti WR');
+    fireEvent.click(screen.getByRole('button', { name: 'Apri menu' }));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull();
+  });
+
+  it('no duplicate Carrello button in the catalogue toolbar', () => {
+    setup();
+    expect(document.querySelector('.card-tb')!.textContent).not.toMatch(/Carrello/);
+  });
+
+  it('Ordina sheet changes field and direction', () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: /^Ordina: Lato A decrescente/ }));
+    const sheet = screen.getByRole('dialog');
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Crescente ↑' }));
+    fireEvent.click(within(sheet).getByRole('radio', { name: 'Formato' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByRole('button', { name: /^Ordina: Formato crescente/ })).toBeTruthy();
+    const names = [...document.querySelectorAll('tbody tr .nm')].slice(0, 2).map(e => e.textContent);
+    expect(names).toEqual(['220x325 mm', '240x270 mm']);
+  });
+
+  it('Filtri sheet picks a category', () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Filtri' }));
+    const sheet = screen.getByRole('dialog');
+    fireEvent.click(within(sheet).getByRole('radio', { name: 'Chiusura laterale' }));
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Mostra 3 formati' }));
+    expect(document.querySelectorAll('tbody tr')).toHaveLength(3);
+    expect(screen.getByRole('button', { name: 'Filtri: Chiusura laterale' })).toBeTruthy();
+  });
+});
