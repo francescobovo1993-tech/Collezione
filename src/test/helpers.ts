@@ -1,12 +1,11 @@
 import catalog from '../../data/catalog.json';
 import changelog from '../../data/changelog.json';
-import sheet from '../../data/sheet-seed.json';
 import volumi from '../../data/volumi.json';
 import type { AppData } from '../App';
 import type { StateStore } from '../lib/state';
 import type { State } from '../lib/types';
 
-export const data = { catalog, volumi, sheet, changelog } as unknown as AppData;
+export const data = { catalog, volumi, changelog } as unknown as AppData;
 
 /** Recursively freeze, like the prototype's store snapshots that caused silent no-op edits. */
 export function deepFreeze<T>(o: T): T {

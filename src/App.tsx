@@ -10,12 +10,13 @@ import { GITHUB_REPO, STOCK_LABEL, WR_URL } from './lib/constants';
 import { fmtDate } from './lib/format';
 import { DEFAULT_SORT, filterRows, sortRows, toRows, type Filters, type Sort } from './lib/rows';
 import {
-  addPoche, clearCart, emptyState, exportState, importFromSheet, normState, removeFromCart, setCartQty, setStock, toggleOwned,
-  type StateStore, type Who,
+  addPoche, clearCart, emptyState, removeFromCart, setCartQty, setStock, toggleOwned,
+  type StateStore,
 } from './lib/state';
 import { LoginModal, PasswordModal, type AuthApi } from './components/AuthModals';
+import { csvToState, stateToCsv } from './lib/csv';
 import type { SyncInfo } from './lib/sync';
-import type { Catalog, ChangelogEntry, SheetSeed, State, Stock } from './lib/types';
+import type { Catalog, ChangelogEntry, State, Stock } from './lib/types';
 
 /** Account + sync controls (SyncedStore). Absent when the build has no Supabase project. */
 export interface SyncApi extends AuthApi {
@@ -28,7 +29,7 @@ export interface SyncApi extends AuthApi {
 const NO_SYNC: SyncInfo = { status: 'local', account: null, error: '', recovery: false };
 const noopSub = () => () => {};
 
-export interface AppData { catalog: Catalog; volumi: Record<string, string>; sheet: SheetSeed; changelog: ChangelogEntry[] }
+export interface AppData { catalog: Catalog; volumi: Record<string, string>; changelog: ChangelogEntry[] }
 type View = 'catalog' | 'cart' | 'log';
 type Overlay = { kind: 'detail'; id: string } | { kind: 'buy'; id: string } | { kind: 'login' } | { kind: 'password' } | null;
 const TITLES: Record<View, string> = { catalog: 'Catalogo buste', cart: 'Carrello', log: 'Aggiornamenti WR' };
@@ -84,24 +85,18 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
   const importFile = async (file: File | undefined) => {
     if (!file) return;
     try {
-      const raw = JSON.parse(await file.text());
-      if (!raw || typeof raw !== 'object' || !('owned' in raw || 'stock' in raw || 'cart' in raw)) throw new Error('shape');
-      const next = normState(raw);
-      update(() => ({ ...next, imported: next.imported ?? 'file' }));
-      toast(`Stato importato: ${Object.keys(next.owned).length} possedute, ${Object.keys(next.cart).length} nel carrello.`);
-    } catch {
-      toast('File non valido: serve un JSON esportato da questa app.');
+      const r = csvToState(await file.text(), rows);
+      update(() => r.state);
+      toast(`Importati ${r.matched} formati` + (r.unknown.length ? `; ${r.unknown.length} righe non riconosciute.` : '.'));
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'File non valido: serve un CSV esportato da questa app.');
     }
   };
   const exportFile = () => {
-    const url = URL.createObjectURL(new Blob([exportState(st)], { type: 'application/json' }));
-    const a = Object.assign(document.createElement('a'), { href: url, download: `buste-wr-stato-${new Date().toISOString().slice(0, 10)}.json` });
+    const url = URL.createObjectURL(new Blob([stateToCsv(rows, st)], { type: 'text/csv;charset=utf-8' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: `buste-wr-${new Date().toISOString().slice(0, 10)}.csv` });
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-  const doImportSheet = (who: Who) => {
-    update(s => importFromSheet(s, who, data.sheet));
-    toast(`Buste di ${who === 'bobbi' ? 'Bobbi' : 'Pomo'} importate dal vecchio foglio.`);
   };
 
   const active = rows.filter(r => !r.removed).length;
@@ -123,7 +118,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
           </button>
           <button data-view="log" aria-current={view === 'log' ? 'page' : undefined} onClick={() => go('log')}><IcRefresh /><span className="lbl">Aggiornamenti</span></button>
           <div className="sep" />
-          <Settings onExport={exportFile} onImport={importFile} onSheet={doImportSheet} sync={sync} info={info}
+          <Settings onExport={exportFile} onImport={importFile} sync={sync} info={info}
             onLogin={() => setOverlay({ kind: 'login' })} onPassword={() => setOverlay({ kind: 'password' })} />
         </nav>
         <div className="side-foot">
@@ -188,8 +183,8 @@ function SyncLine({ info, enabled }: { info: SyncInfo; enabled: boolean }) {
   return <span className={'sync-line ' + info.status} title={info.error || undefined}>{text}</span>;
 }
 
-function Settings({ onExport, onImport, onSheet, sync, info, onLogin, onPassword }: {
-  onExport: () => void; onImport: (f: File | undefined) => void; onSheet: (who: Who) => void; sync?: SyncApi; info: SyncInfo;
+function Settings({ onExport, onImport, sync, info, onLogin, onPassword }: {
+  onExport: () => void; onImport: (f: File | undefined) => void; sync?: SyncApi; info: SyncInfo;
   onLogin: () => void; onPassword: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -224,14 +219,11 @@ function Settings({ onExport, onImport, onSheet, sync, info, onLogin, onPassword
             <button role="menuitem" onClick={() => { setOpen(false); onLogin(); }}>Accedi o crea un account</button>
           ))}
           {sync && <div className="menu-sep" />}
-          <button role="menuitem" onClick={() => { setOpen(false); onExport(); }}>Esporta stato (JSON)</button>
-          <label role="menuitem">Importa stato (JSON)
-            <input className="vis-hidden" type="file" accept="application/json,.json"
+          <button role="menuitem" onClick={() => { setOpen(false); onExport(); }}>Esporta CSV</button>
+          <label role="menuitem">Importa CSV
+            <input className="vis-hidden" type="file" accept=".csv,text/csv"
               onChange={e => { setOpen(false); onImport(e.target.files?.[0]); e.target.value = ''; }} />
           </label>
-          <div className="menu-sep" />
-          <button role="menuitem" onClick={() => { setOpen(false); onSheet('bobbi'); }}>Importa dal vecchio foglio: Bobbi</button>
-          <button role="menuitem" onClick={() => { setOpen(false); onSheet('pomo'); }}>Importa dal vecchio foglio: Pomo</button>
         </div>
       )}
     </div>

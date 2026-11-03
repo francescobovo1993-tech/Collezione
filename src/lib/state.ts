@@ -1,5 +1,5 @@
 import { LS_KEY } from './constants';
-import type { Catalog, SheetSeed, State, Stock } from './types';
+import type { Catalog, State, Stock } from './types';
 
 export const emptyState = (): State => ({ owned: {}, stock: {}, cart: {}, imported: null });
 
@@ -84,22 +84,3 @@ export function addPoche(s: State, catalog: Catalog, at = new Date().toISOString
   }
   return { state: { ...s, cart }, added };
 }
-
-export type Who = 'bobbi' | 'pomo' | 'none';
-/** First-run import from the old Google Sheet columns. */
-export function importFromSheet(s: State, who: Who, sheet: SheetSeed): State {
-  const owned = { ...s.owned };
-  const stock = { ...s.stock };
-  if (who !== 'none') {
-    for (const [id, e] of Object.entries(sheet)) {
-      if (who === 'bobbi' && e.bobbi) {
-        owned[id] = true;
-        if (e.nota) stock[id] = e.nota;
-      }
-      if (who === 'pomo' && e.pomo) owned[id] = true;
-    }
-  }
-  return { ...s, owned, stock, imported: who };
-}
-
-export const exportState = (s: State) => JSON.stringify(s, null, 2);

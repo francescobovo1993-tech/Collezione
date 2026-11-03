@@ -25,9 +25,6 @@ export interface Row extends CatalogEntry {
   volumi: string;
 }
 
-export interface SheetSeedEntry { bobbi: boolean; pomo: boolean; nota: Stock | '' }
-export type SheetSeed = Record<string, SheetSeedEntry>;
-
 export interface CartItem { qty: number; at?: string }
 export interface State {
   owned: Record<string, true>;

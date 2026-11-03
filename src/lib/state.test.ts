@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import bobbi from '../../seed/bobbi-state-seed.json';
 import { data, deepFreeze } from '../test/helpers';
 import {
-  addPoche, clearCart, emptyState, importFromSheet, LocalStorageStore, normState, removeFromCart, setCartQty, setStock, toggleOwned,
+  addPoche, clearCart, emptyState, LocalStorageStore, normState, removeFromCart, setCartQty, setStock, toggleOwned,
 } from './state';
 import type { State } from './types';
 
@@ -23,7 +23,6 @@ describe('state updates are immutable', () => {
       ['removeFromCart', removeFromCart(s, 'fumetti~a4')],
       ['clearCart', clearCart(s)],
       ['addPoche', addPoche(s, data.catalog).state],
-      ['importFromSheet', importFromSheet(s, 'pomo', data.sheet)],
     ];
     for (const [, next] of steps) expect(next).not.toBe(s);
     expect(JSON.stringify(s)).toBe(snapshot);
@@ -48,21 +47,6 @@ describe('state updates are immutable', () => {
 });
 
 describe('import', () => {
-  it('Sono Bobbi brings in owned + stock from the sheet', () => {
-    const s = importFromSheet(emptyState(), 'bobbi', data.sheet);
-    expect(s.imported).toBe('bobbi');
-    expect(s.owned['fumetti~a3-portfolio']).toBe(true);
-    expect(s.stock['fumetti~a3-portfolio']).toBe('poche');
-    expect(s.stock['manuale~non-wr-formato']).toBe('tante');
-  });
-  it('Sono Pomo brings in owned only', () => {
-    const s = importFromSheet(emptyState(), 'pomo', data.sheet);
-    expect(Object.keys(s.owned).length).toBeGreaterThan(0);
-    expect(s.stock).toEqual({});
-  });
-  it('Parto da zero marks state as set up and empty', () => {
-    expect(importFromSheet(emptyState(), 'none', data.sheet)).toEqual({ ...emptyState(), imported: 'none' });
-  });
   it('normState accepts bobbi-state-seed.json and drops junk', () => {
     const s = normState(bobbi);
     expect(s.imported).toBe('bobbi');

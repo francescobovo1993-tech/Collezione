@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sortCatalog } from '../src/lib/wr.ts';
-import type { Catalog, ChangelogEntry, SheetSeed, Stock } from '../src/lib/types.ts';
+import type { Catalog, ChangelogEntry } from '../src/lib/types.ts';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const force = process.argv.includes('--force');
@@ -24,15 +24,10 @@ const now = new Date().toISOString();
 
 const catalog: Catalog = {};
 const volumi: Record<string, string> = {};
-const sheet: SheetSeed = {};
 for (const [id, e] of Object.entries(seed)) {
   catalog[id] = { name: e.name, cat: e.cat, a: e.a, b: e.b, price: e.price, pack: e.pack, material: e.material ?? '',
     notes: e.notes ?? '', source: e.source, removed: !!e.removed, order: e.order, updatedAt: now };
   volumi[id] = e.volumi ?? '';
-  if (e.sheetBobbi || e.sheetPomo || e.sheetNota) {
-    const nota = e.sheetNota === 'poche' || e.sheetNota === 'tante' ? (e.sheetNota as Stock) : '';
-    sheet[id] = { bobbi: !!e.sheetBobbi, pomo: !!e.sheetPomo, nota };
-  }
 }
 const sorted = sortCatalog(catalog);
 const changelog: ChangelogEntry[] = [{
@@ -43,7 +38,6 @@ const changelog: ChangelogEntry[] = [{
 const out: [string, unknown][] = [
   ['data/catalog.json', sorted],
   ['data/volumi.json', Object.fromEntries(Object.keys(sorted).map(id => [id, volumi[id]]))],
-  ['data/sheet-seed.json', Object.fromEntries(Object.keys(sorted).filter(id => sheet[id]).map(id => [id, sheet[id]]))],
   ['data/changelog.json', changelog],
 ];
 mkdirSync(join(root, 'data'), { recursive: true });

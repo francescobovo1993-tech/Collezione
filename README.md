@@ -22,7 +22,6 @@ npm run build    # production build in dist/
 | --- | --- | --- |
 | `data/catalog.json` | WR formats: name, sizes, price, pack, material, notes | `npm run refresh` |
 | `data/volumi.json` | My notes: which comics fit each bag | Me, by hand (GitHub web editor) |
-| `data/sheet-seed.json` | Who owned what in the old Google Sheet | Used only by the first-run import |
 | `data/changelog.json` | History of refreshes, newest first | `npm run refresh` |
 | `seed/` | Original files from the prototype | Kept for reference |
 
@@ -78,9 +77,11 @@ Always saved in the browser (`localStorage`, key `wrbuste.state.v1`).
 marks to your account (one row per person, protected by row-level security), so they follow you to
 every device. Setup: [SUPABASE.md](SUPABASE.md). Without it the app is browser-only.
 
-- **Back up / move by hand:** Impostazioni → **Esporta stato (JSON)**, then **Importa stato (JSON)** elsewhere.
-- **Old Google Sheet:** Impostazioni → **Importa dal vecchio foglio: Bobbi / Pomo** adds that person's
-  owned formats (and Bobbi's Poche/Tante) from `data/sheet-seed.json`.
+- **Spreadsheet export / import:** Impostazioni → **Esporta CSV** gives one row per format
+  (`id; Formato; Categoria; Lato A; Lato B; Ce l'ho; Scorte; Carrello (pz)`, `;`-separated so Excel opens it
+  in columns). Edit *Ce l'ho* (`sì` / empty), *Scorte* (`Poche` / `Tante` / empty) and *Carrello (pz)*, then
+  **Importa CSV**: the file replaces all your marks. Rows are matched by `id`, or by *Formato* (+ *Categoria*)
+  if there's no id; `,` and tab separators work too.
 
 Code: `StateStore` in `src/lib/state.ts` (browser), `SyncedStore` in `src/lib/sync.ts` (sync rules),
 `src/lib/supabase.ts` (the Supabase backend), `supabase/schema.sql` (table + policies).
@@ -89,7 +90,6 @@ Code: `StateStore` in `src/lib/state.ts` (browser), `SyncedStore` in `src/lib/sy
 
 Send Pomo the site link. The catalogue is shared; marks are personal.
 - With sync on: add his Gmail to the Google test users (see SUPABASE.md); he signs in with Google.
-- To bring in his owned list from the old sheet: Impostazioni → **Importa dal vecchio foglio: Pomo**.
 
 ## Deploy
 

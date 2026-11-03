@@ -113,15 +113,26 @@ describe('buy flow and cart', () => {
   });
 });
 
-describe('old sheet import', () => {
-  it('shows no onboarding banner; Impostazioni imports Bobbi’s marks from the sheet', () => {
-    const store = new MemoryStore(null);
-    render(<App data={data} store={store} repo="" />);
-    expect(screen.queryByText('Prima volta qui?')).toBeNull();
+describe('Impostazioni', () => {
+  it('has CSV export/import and no old-sheet import', () => {
+    setup();
     fireEvent.click(screen.getByRole('button', { name: /Impostazioni/ }));
-    act(() => { fireEvent.click(screen.getByRole('menuitem', { name: 'Importa dal vecchio foglio: Bobbi' })); });
-    expect(store.last.imported).toBe('bobbi');
-    expect(store.last.stock['fumetti~a3-portfolio']).toBe('poche');
+    expect(screen.getByRole('menuitem', { name: 'Esporta CSV' })).toBeTruthy();
+    expect(screen.getByText('Importa CSV')).toBeTruthy();
+    expect(screen.queryByText(/vecchio foglio/)).toBeNull();
+    expect(screen.queryByText(/JSON/)).toBeNull();
+  });
+  it('importing a CSV replaces the marks', async () => {
+    const store = new MemoryStore(normState(bobbi));
+    render(<App data={data} store={store} repo="" />);
+    fireEvent.click(screen.getByRole('button', { name: /Impostazioni/ }));
+    const input = screen.getByText('Importa CSV').querySelector('input')!;
+    const file = new File(['Formato;Ce l’ho;Scorte;Carrello (pz)\nA3;sì;Tante;200\n'], 'm.csv', { type: 'text/csv' });
+    await act(async () => { fireEvent.change(input, { target: { files: [file] } }); });
+    expect(store.last.owned).toEqual({ 'fumetti~a3': true });
+    expect(store.last.stock).toEqual({ 'fumetti~a3': 'tante' });
+    expect(store.last.cart['fumetti~a3'].qty).toBe(200);
+    expect(within(row('fumetti~a3')).getByRole('switch').getAttribute('aria-checked')).toBe('true');
   });
 });
 
