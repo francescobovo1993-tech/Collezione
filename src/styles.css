@@ -79,7 +79,7 @@ h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:4px 0 0}
 
 /* table */
 .tablewrap{overflow:auto;max-height:calc(100vh - 250px);min-height:300px;margin:0 -14px;padding:0 14px}
-table{border-collapse:separate;border-spacing:0;width:100%;min-width:1080px}
+table{border-collapse:separate;border-spacing:0;width:100%;min-width:1000px;table-layout:fixed}
 th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
 thead th{position:sticky;top:0;z-index:2;background:var(--card);font-weight:500;color:var(--muted);font-size:14px;white-space:nowrap;padding:0}
 thead th button{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;padding:12px 10px;width:100%;box-sizing:border-box}
@@ -90,10 +90,11 @@ thead th[aria-sort] button{color:var(--ink)}
 thead th[aria-sort] .si{opacity:1}
 tbody tr:hover td{background:var(--row-hover)}
 tbody tr:last-child td{border-bottom:0}
-.c-own{width:64px}.c-stock{width:118px}.c-name{width:260px}.c-a,.c-b{width:70px}.c-cat{width:170px;white-space:nowrap}.c-price{width:140px;white-space:nowrap}.c-vol{width:260px}.c-notes{width:260px}.c-buy{width:110px;text-align:right}
+/* fixed columns; Volumi and Note WR share whatever width is left, so the table fits the card */
+.c-own{width:64px}.c-stock{width:112px}.c-name{width:190px}.c-a,.c-b{width:80px}.c-cat{width:164px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.c-price{width:132px;white-space:nowrap}.c-vol,.c-notes{overflow:hidden}.c-buy{width:104px;text-align:right}
 .c-a,.c-b,.c-price{font-variant-numeric:tabular-nums}
 .c-cat,.c-notes,.c-vol{color:var(--muted);font-size:14px}
-.ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.ell{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
 .c-vol .ell{color:var(--ink)}
 .c-price small{color:var(--muted);font-size:12px;margin-left:4px}
 .namebtn{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;color:var(--blue);font-weight:500;line-height:1.25}
@@ -343,3 +344,5 @@ a.btn{text-decoration:none;color:inherit}
 @media (prefers-reduced-motion:no-preference){
   @media (max-width:860px){ .bsheet{animation:bsheetup .22s ease-out} @keyframes bsheetup{from{transform:translateY(100%)}} }
 }
+/* narrower desktop windows: drop Categoria so Volumi and Note WR keep usable width */
+@media (min-width:861px) and (max-width:1350px){ .c-cat{display:none} table{min-width:880px} }
