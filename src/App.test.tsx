@@ -320,28 +320,24 @@ describe('mobile chrome', () => {
     expect(document.querySelector('.card-tb')!.textContent).not.toMatch(/Carrello/);
   });
 
-  it('Ordina sheet (Revolut style): choices apply only on Applica', () => {
+  it('Ordina bottom sheet: one tap applies and closes; red dot when not default', () => {
     setup();
-    fireEvent.click(screen.getByRole('button', { name: /^Ordina: Lato A decrescente/ }));
-    let sheet = screen.getByRole('dialog', { name: 'Ordina' });
-    // The list starts collapsed to 5 options; Formato (3rd) and Lato A (4th) are visible.
-    fireEvent.click(within(sheet).getByRole('radio', { name: 'Formato' }));
-    fireEvent.click(within(sheet).getByRole('radio', { name: /^Crescente/ }));
-    expect(screen.getByRole('button', { name: /^Ordina: Lato A decrescente/ })).toBeTruthy(); // not applied yet
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Applica' }));
+    const btn = () => screen.getByRole('button', { name: /^Ordina:/ });
+    expect(btn().getAttribute('aria-label')).toBe('Ordina: Lato A: dal più grande');
+    expect(btn().querySelector('.dot-on')).toBeNull();
+    fireEvent.click(btn());
+    const sheet = screen.getByRole('dialog', { name: 'Ordina per' });
+    expect(within(sheet).getByRole('radio', { name: 'Lato A: dal più grande' }).getAttribute('aria-checked')).toBe('true');
+    expect(within(sheet).queryByRole('button', { name: 'Applica' })).toBeNull();
+    fireEvent.click(within(sheet).getByRole('radio', { name: 'Nome (A → Z)' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('button', { name: /^Ordina: Formato crescente/ })).toBeTruthy();
+    expect(btn().getAttribute('aria-label')).toBe('Ordina: Nome (A → Z)');
+    expect(btn().querySelector('.dot-on')).not.toBeNull();
     const names = [...document.querySelectorAll('tbody tr .nm')].slice(0, 2).map(e => e.textContent);
     expect(names).toEqual(['220x325 mm', '240x270 mm']);
-
-    // Closing with X discards changes; long list collapses behind "Mostra tutto".
-    fireEvent.click(screen.getByRole('button', { name: /^Ordina:/ }));
-    sheet = screen.getByRole('dialog', { name: 'Ordina' });
-    expect(within(sheet).queryByRole('radio', { name: 'Nel carrello' })).toBeNull();
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Mostra tutto' }));
-    fireEvent.click(within(sheet).getByRole('radio', { name: 'Nel carrello' }));
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Chiudi' }));
-    expect(screen.getByRole('button', { name: /^Ordina: Formato crescente/ })).toBeTruthy();
+    fireEvent.click(btn());
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('no category filter anywhere', () => {

@@ -1,10 +1,10 @@
 import { CATS, STOCK_LABEL } from '../lib/constants';
 import { dimsOf, eur } from '../lib/format';
-import { filterRows, type Filters, type Show, type Sort, type SortKey } from '../lib/rows';
+import { DEFAULT_SORT, filterRows, type Filters, type Show, type Sort, type SortKey } from '../lib/rows';
 import type { Row, State, Stock } from '../lib/types';
 import { useState } from 'react';
-import { FullSheet, RadioSection } from './FullSheet';
-import { IcDown, IcSearch, IcSort, IcSortArrows, IcUp } from './icons';
+import { BottomSheet } from './BottomSheet';
+import { IcCheck, IcDown, IcSearch, IcSort, IcSortArrows, IcUp } from './icons';
 
 export const COLS: { k: SortKey; label: string; cls: string; sortLabel: string }[] = [
   { k: 'owned', label: 'Ce l’ho', cls: 'c-own', sortLabel: 'Possedute prima' },
@@ -58,8 +58,8 @@ export function CatalogView(p: Props) {
               onChange={e => p.onFilters({ ...filters, q: e.target.value })} />
           </div>
           <span className="count desktop-only">{p.visible.length} di {p.rows.length}</span>
-          <button className="icbtn mobile-flex" aria-label={`Ordina: ${sortLabel} ${sort.dir > 0 ? 'crescente' : 'decrescente'}`} onClick={() => setSheet('sort')}>
-            <IcSortArrows />
+          <button className="icbtn mobile-flex" aria-label={`Ordina: ${currentSortLabel(sort, sortLabel)}`} onClick={() => setSheet('sort')}>
+            <IcSortArrows />{(sort.key !== DEFAULT_SORT.key || sort.dir !== DEFAULT_SORT.dir) && <span className="dot-on" />}
           </button>
         </div>
         <div className="tablewrap">
@@ -94,20 +94,39 @@ export function CatalogView(p: Props) {
   );
 }
 
+const currentSortLabel = (sort: Sort, fallback: string) =>
+  SORT_OPTIONS.find(o => o.sort.key === sort.key && o.sort.dir === sort.dir)?.label ?? `${fallback} ${sort.dir > 0 ? 'crescente' : 'decrescente'}`;
+
+/** Sort choices for the mobile sheet: field + direction in one line, like Revolut's "Price (from low to high)". */
+export const SORT_OPTIONS: { label: string; sort: Sort }[] = [
+  { label: 'Lato A: dal più grande', sort: { key: 'a', dir: -1 } },
+  { label: 'Lato A: dal più piccolo', sort: { key: 'a', dir: 1 } },
+  { label: 'Lato B: dal più grande', sort: { key: 'b', dir: -1 } },
+  { label: 'Lato B: dal più piccolo', sort: { key: 'b', dir: 1 } },
+  { label: 'Nome (A → Z)', sort: { key: 'name', dir: 1 } },
+  { label: 'Nome (Z → A)', sort: { key: 'name', dir: -1 } },
+  { label: 'Prezzo: dal più basso', sort: { key: 'price', dir: 1 } },
+  { label: 'Prezzo: dal più alto', sort: { key: 'price', dir: -1 } },
+  { label: 'Possedute prima', sort: { key: 'owned', dir: 1 } },
+  { label: 'Scorte: Poche prima', sort: { key: 'stock', dir: 1 } },
+  { label: 'Nel carrello prima', sort: { key: 'cart', dir: 1 } },
+  { label: 'Categoria (A → Z)', sort: { key: 'cat', dir: 1 } },
+];
+
 function SortSheet({ sort, onApply, onClose }: { sort: Sort; onApply: (s: Sort) => void; onClose: () => void }) {
-  const [draft, setDraft] = useState<Sort>(sort);
   return (
-    <FullSheet title="Ordina" action="Applica" onClose={onClose} onAction={() => { onApply(draft); onClose(); }}>
-      <RadioSection label="Ordina per" collapsedCount={5} value={draft.key}
-        options={COLS.map(c => ({ value: c.k, label: c.sortLabel }))}
-        onChange={k => setDraft({ ...draft, key: k })} />
-      <RadioSection label="Direzione" value={draft.dir}
-        options={[
-          { value: 1 as const, label: 'Crescente', hint: 'A → Z, dal più piccolo' },
-          { value: -1 as const, label: 'Decrescente', hint: 'Z → A, dal più grande' },
-        ]}
-        onChange={d => setDraft({ ...draft, dir: d })} />
-    </FullSheet>
+    <BottomSheet title="Ordina per" onClose={onClose}>
+      <div className="bsheet-list" role="radiogroup" aria-label="Ordina per">
+        {SORT_OPTIONS.map(o => {
+          const on = o.sort.key === sort.key && o.sort.dir === sort.dir;
+          return (
+            <button key={o.label} className="bopt" role="radio" aria-checked={on} onClick={() => { onApply(o.sort); onClose(); }}>
+              {o.label}{on && <IcCheck />}
+            </button>
+          );
+        })}
+      </div>
+    </BottomSheet>
   );
 }
 
