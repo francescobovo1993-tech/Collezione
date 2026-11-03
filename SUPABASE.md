@@ -91,6 +91,15 @@ Notes:
   They'd only ever see their own empty row, never your marks. To block that once you and Pomo have
   accounts: **Authentication → Sign In / Providers → Allow new users to sign up** → off.
 
+## 7. Shared Volumi notes (edit from the app)
+
+1. Open [`supabase/volumi.sql`](supabase/volumi.sql). At the bottom, replace `POMO-EMAIL@gmail.com`
+   with the email Pomo signs in with (and check yours is right).
+2. Supabase → **SQL Editor → New query** → paste the whole file → **Run**.
+3. In the app, sign in, open a format → Volumi → **Modifica**.
+
+To add or remove an editor later: Supabase → **Table Editor → editors** → add/delete a row with the email.
+
 ## Good to know
 
 - **Free plan pause:** Supabase pauses free projects after a period without use (about a week).

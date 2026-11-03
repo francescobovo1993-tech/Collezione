@@ -11,6 +11,9 @@ class FakeRemote implements Remote {
   failPut = false;
   private cbs = new Set<(a: Account | null) => void>();
   recover: () => void = () => {};
+  volumi: Record<string, string> = {};
+  editors = new Set<string>(['bobbi@example.com']);
+  failVolumi = false;
   passwords = new Map<string, string>();
   async getAccount() { return this.account; }
   onAuthChange(cb: (a: Account | null) => void) { this.cbs.add(cb); return () => { this.cbs.delete(cb); }; }
@@ -22,6 +25,12 @@ class FakeRemote implements Remote {
   }
   async signUp() { return 'confirm-email' as const; }
   async sendPasswordReset() {}
+  async fetchVolumi() { return { ...this.volumi }; }
+  async putVolumi(id: string, text: string) {
+    if (this.failVolumi) throw new Error('Il tuo account non può modificare i volumi.');
+    this.volumi[id] = text;
+  }
+  async isEditor(email: string) { return this.editors.has(email); }
   async setPassword(pw: string) { if (this.account) this.passwords.set(this.account.email, pw); }
   async signOut() { this.login(null); }
   async fetch(id: string) { return this.rows.get(id) ?? null; }
@@ -145,6 +154,32 @@ describe('SyncedStore', () => {
     expect(s.getInfo().recovery).toBe(true);
     await s.setPassword('nuovapass1');
     expect(s.getInfo().recovery).toBe(false);
+  });
+
+  it('shared Volumi: loaded for everyone, editable only by editors, rolled back on failure', async () => {
+    remote.volumi = { 'fumetti~a4': 'Dylan Dog' };
+    const s = new SyncedStore(new MemoryStore(mine), remote, 0);
+    s.start(); await tick();
+    expect(s.getVolumi()).toEqual({ 'fumetti~a4': 'Dylan Dog' });         // signed out can read
+    await expect(s.saveVolumi('fumetti~a4', 'x')).rejects.toThrow('Accedi per modificare i volumi.');
+
+    await s.signIn(); await tick(); await tick();                          // bobbi@example.com is an editor
+    expect(s.getInfo().editor).toBe(true);
+    await s.saveVolumi('fumetti~a4', '  Dylan Dog, Tex  ');
+    expect(remote.volumi['fumetti~a4']).toBe('Dylan Dog, Tex');
+    expect(s.getVolumi()['fumetti~a4']).toBe('Dylan Dog, Tex');
+
+    remote.failVolumi = true;
+    await expect(s.saveVolumi('fumetti~a4', 'altro')).rejects.toThrow(/non può modificare/);
+    expect(s.getVolumi()['fumetti~a4']).toBe('Dylan Dog, Tex');            // rolled back
+  });
+
+  it('a signed-in account that is not in the editors list cannot edit', async () => {
+    remote.editors.clear();
+    const s = new SyncedStore(new MemoryStore(mine), remote, 0);
+    s.start(); await s.signIn(); await tick(); await tick();
+    expect(s.getInfo().editor).toBe(false);
+    await expect(s.saveVolumi('fumetti~a4', 'x')).rejects.toThrow('Il tuo account non può modificare i volumi.');
   });
 
   it('signing out flushes pending changes and returns to browser-only', async () => {

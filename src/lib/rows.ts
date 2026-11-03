@@ -2,8 +2,9 @@ import { CATS } from './constants';
 import { coll } from './format';
 import type { Catalog, Row, State } from './types';
 
-export const toRows = (catalog: Catalog, volumi: Record<string, string>): Row[] =>
-  Object.entries(catalog).map(([id, e]) => ({ ...e, id, volumi: volumi[id] ?? '' }));
+/** Catalogue rows with their Volumi note: the online shared edit if there is one, else data/volumi.json. */
+export const toRows = (catalog: Catalog, volumi: Record<string, string>, overrides: Record<string, string> = {}): Row[] =>
+  Object.entries(catalog).map(([id, e]) => ({ ...e, id, volumi: overrides[id] ?? volumi[id] ?? '' }));
 
 export type Show = 'all' | 'owned' | 'notowned' | 'poche' | 'tante' | 'cart';
 export interface Filters { q: string; show: Show; cat: string }

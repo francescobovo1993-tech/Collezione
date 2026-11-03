@@ -1,11 +1,19 @@
-import { CATS, STOCK_LABEL, volumiEditUrl } from '../lib/constants';
+import { useState } from 'react';
+import { CATS, STOCK_LABEL } from '../lib/constants';
 import { dimsOf, eur } from '../lib/format';
 import type { Row, Stock } from '../lib/types';
 import { BagIcon, IcEdit } from './icons';
 import { Modal } from './Modal';
 
+/** What the Volumi row allows: edit, ask to sign in, read only, or nothing (sync not set up). */
+export type VolumiEdit =
+  | { kind: 'edit'; save: (text: string) => Promise<void> }
+  | { kind: 'signin'; onSignIn: () => void }
+  | { kind: 'readonly' }
+  | { kind: 'off' };
+
 interface Props {
-  r: Row; owned: boolean; stock: Stock | ''; qty: number; repo: string;
+  r: Row; owned: boolean; stock: Stock | ''; qty: number; volumiEdit: VolumiEdit;
   onClose: () => void; onToggleOwned: () => void; onStock: (v: Stock | '') => void; onBuy: () => void;
 }
 
@@ -13,8 +21,7 @@ const Info = ({ k, children }: { k: string; children: React.ReactNode }) => (
   <div className="rowi"><span className="k">{k}</span><span className="v">{children}</span></div>
 );
 
-export function DetailModal({ r, owned, stock, qty, repo, onClose, onToggleOwned, onStock, onBuy }: Props) {
-  const editUrl = volumiEditUrl(repo);
+export function DetailModal({ r, owned, stock, qty, volumiEdit, onClose, onToggleOwned, onStock, onBuy }: Props) {
   return (
     <Modal labelledBy="detTitle" wide onClose={onClose}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 6 }}>
@@ -46,13 +53,7 @@ export function DetailModal({ r, owned, stock, qty, repo, onClose, onToggleOwned
             ))}
           </span>
         </div>
-        <div className="rowi">
-          <span className="k">Volumi</span>
-          <span className="v">
-            {r.volumi || 'Nessun volume annotato'}
-            {editUrl && <><br /><a className="ghlink" href={editUrl} target="_blank" rel="noopener"><IcEdit />Modifica su GitHub</a></>}
-          </span>
-        </div>
+        <VolumiRow key={r.id} text={r.volumi} edit={volumiEdit} />
       </div>
 
       <div className="group-label">Informazioni WR</div>
@@ -63,5 +64,43 @@ export function DetailModal({ r, owned, stock, qty, repo, onClose, onToggleOwned
         <div className="rowi stack"><span className="k">Note WR</span><span className="v">{r.notes || '—'}</span></div>
       </div>
     </Modal>
+  );
+}
+
+function VolumiRow({ text, edit }: { text: string; edit: VolumiEdit }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  if (draft != null && edit.kind === 'edit') {
+    const save = async () => {
+      setBusy(true); setError('');
+      try { await edit.save(draft); setDraft(null); }
+      catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+      finally { setBusy(false); }
+    };
+    return (
+      <div className="rowi stack">
+        <div className="field" style={{ width: '100%' }}>
+          <label htmlFor="voltext">Volumi che entrano in questa busta (visibili a tutti)</label>
+          <textarea id="voltext" rows={4} autoFocus value={draft} onChange={e => setDraft(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) void save(); }} />
+        </div>
+        {error && <div className="form-msg err" role="alert">{error}</div>}
+        <div className="actions" style={{ marginTop: 8 }}>
+          <button className="btn primary" disabled={busy} onClick={save}>{busy ? 'Salvo…' : 'Salva'}</button>
+          <button className="btn" disabled={busy} onClick={() => { setDraft(null); setError(''); }}>Annulla</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="rowi">
+      <span className="k">Volumi</span>
+      <span className="v">
+        {text || 'Nessun volume annotato'}
+        {edit.kind === 'edit' && <><br /><button className="btn link ghlink" onClick={() => setDraft(text)}><IcEdit />Modifica</button></>}
+        {edit.kind === 'signin' && <><br /><button className="btn link ghlink" onClick={edit.onSignIn}>Accedi per modificarli</button></>}
+      </span>
+    </div>
   );
 }

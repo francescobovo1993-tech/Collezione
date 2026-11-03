@@ -21,14 +21,12 @@ npm run build    # production build in dist/
 | File | What | Who writes it |
 | --- | --- | --- |
 | `data/catalog.json` | WR formats: name, sizes, price, pack, material, notes | `npm run refresh` |
-| `data/volumi.json` | My notes: which comics fit each bag | Me, by hand (GitHub web editor) |
+| `data/volumi.json` | Starting set of Volumi notes (which comics fit each bag) | Nobody: edits now happen in the app |
 | `data/changelog.json` | History of refreshes, newest first | `npm run refresh` |
 | `seed/` | Original files from the prototype | Kept for reference |
 
 IDs are `<cat>~<slug(name)>` (e.g. `fumetti~manga-tp1`). Don't rename them: personal state and diffs depend on them.
 
-To add a note to a format, open it in the app and press **Modifica su GitHub**, or edit `data/volumi.json` directly.
-Saving on `main` redeploys the site.
 
 ## Refreshing from wrbuste.it
 
@@ -64,9 +62,15 @@ artifact: download it and replace the fixture to test against the real markup.
 
 ## Editing "Volumi"
 
-Volumi (which comics fit each bag) are read-only in the app. To edit them, open a format and press
-**Modifica su GitHub**, or edit `data/volumi.json` on GitHub. Commit to `main` and the site redeploys in
-a minute or two. The refresh never touches this file.
+Volumi (which comics fit each bag) are **shared**: the same notes for every account.
+Open a format → Volumi → **Modifica** → **Salva**. Everyone sees the change (others on their next
+reload or when they come back to the tab).
+
+- Stored in the Supabase table `volumi` (setup: `supabase/volumi.sql`, see SUPABASE.md step 7).
+  A note saved there overrides the one in `data/volumi.json`, which stays as the starting set.
+- Anyone can read them; only accounts listed in the `editors` table can edit. Signed out you see
+  *Accedi per modificarli*; signed in but not an editor, the notes are read-only.
+- The WR refresh never touches Volumi.
 
 ## Personal state (owned / Scorte / Carrello)
 

@@ -56,15 +56,14 @@ describe('catalogue rows update immediately (frozen-state regression)', () => {
 });
 
 describe('detail modal', () => {
-  it('shows WR info, read-only volumi and the GitHub edit link', () => {
+  it('shows WR info and read-only volumi when sync is not set up', () => {
     setup();
     fireEvent.click(within(row('fumetti~a3-portfolio-2')).getByRole('button', { name: 'A3 PORTFOLIO 2' }));
     const dlg = screen.getByRole('dialog');
     expect(within(dlg).getByText('Cofanetto Corto Maltese')).toBeTruthy();
-    expect(within(dlg).getByRole('link', { name: /Modifica su GitHub/ }).getAttribute('href'))
-      .toBe('https://github.com/owner/repo/edit/main/data/volumi.json');
     expect(within(dlg).getByText('325×420 mm')).toBeTruthy();
-    expect(dlg.querySelector('textarea')).toBeNull();
+    expect(within(dlg).queryByRole('button', { name: /Modifica/ })).toBeNull();
+    expect(within(dlg).queryByRole('link')).toBeNull();
   });
 });
 
@@ -151,12 +150,17 @@ describe('account menu', () => {
   type Acc = { id: string; email: string; name: string } | null;
   const fakeSync = (account: Acc, over: Partial<Record<string, unknown>> = {}) => {
     const calls: string[] = [];
-    const info = { status: account ? 'synced' as const : 'local' as const, account, error: '', recovery: false, ...(over.info as object) };
+    const info = { status: account ? 'synced' as const : 'local' as const, account, error: '', recovery: false, editor: !!account, ...(over.info as object) };
+    let volumi: Record<string, string> = { 'fumetti~a4': 'Note condivise' };
+    let volCb = () => {};
     return {
       calls,
       api: {
         getInfo: () => info,
         onInfo: () => () => {},
+        getVolumi: () => volumi,
+        onVolumi: (cb: () => void) => { volCb = cb; return () => {}; },
+        saveVolumi: async (id: string, t: string) => { calls.push(`vol:${id}:${t}`); if (t === 'boom') throw new Error('Il tuo account non può modificare i volumi.'); volumi = { ...volumi, [id]: t }; volCb(); },
         signIn: async () => { calls.push('google'); },
         signInWithPassword: async (e: string, p: string) => { calls.push(`pw:${e}:${p}`); if (p === 'bad') throw new Error('Email o password non corretti.'); },
         signUp: async (e: string) => { calls.push(`signup:${e}`); return 'confirm-email' as const; },
@@ -239,6 +243,38 @@ describe('account menu', () => {
     fireEvent.click(screen.getByRole('button', { name: /Impostazioni/ }));
     fireEvent.click(screen.getByRole('menuitem', { name: 'Esci' }));
     expect(f.calls).toContain('out');
+  });
+
+  it('Volumi: shared notes show in the table; editors edit them in the card', async () => {
+    const f = fakeSync({ id: 'u1', email: 'bobbi@example.com', name: 'Bobbi' });
+    render(<App data={data} store={new MemoryStore(normState(bobbi))} sync={f.api} repo="" />);
+    expect(within(row('fumetti~a4')).getByText('Note condivise')).toBeTruthy();
+    fireEvent.click(within(row('fumetti~a4')).getByRole('button', { name: 'A4' }));
+    const dlg = screen.getByRole('dialog');
+    fireEvent.click(within(dlg).getByRole('button', { name: /Modifica/ }));
+    const ta = within(dlg).getByLabelText(/Volumi che entrano/) as HTMLTextAreaElement;
+    expect(ta.value).toBe('Note condivise');
+    fireEvent.change(ta, { target: { value: 'boom' } });
+    await act(async () => { fireEvent.click(within(dlg).getByRole('button', { name: 'Salva' })); });
+    expect(within(dlg).getByRole('alert').textContent).toMatch(/non può modificare/);
+    fireEvent.change(within(dlg).getByLabelText(/Volumi che entrano/), { target: { value: 'Dylan Dog, Tex' } });
+    await act(async () => { fireEvent.click(within(dlg).getByRole('button', { name: 'Salva' })); });
+    expect(f.calls).toContain('vol:fumetti~a4:Dylan Dog, Tex');
+    expect(within(dlg).getByText('Dylan Dog, Tex')).toBeTruthy();
+    expect(within(row('fumetti~a4')).getByText('Dylan Dog, Tex')).toBeTruthy();
+  });
+
+  it('Volumi: signed out asks to sign in; non-editors only read', () => {
+    const out = fakeSync(null);
+    const { unmount } = render(<App data={data} store={new MemoryStore(normState(bobbi))} sync={out.api} repo="" />);
+    fireEvent.click(within(row('fumetti~a4')).getByRole('button', { name: 'A4' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Accedi per modificarli' }));
+    expect(screen.getByRole('heading', { name: 'Accedi' })).toBeTruthy();
+    unmount();
+    const reader = fakeSync({ id: 'u2', email: 'x@example.com', name: 'X' }, { info: { editor: false } });
+    render(<App data={data} store={new MemoryStore(normState(bobbi))} sync={reader.api} repo="" />);
+    fireEvent.click(within(row('fumetti~a4')).getByRole('button', { name: 'A4' }));
+    expect(within(screen.getByRole('dialog')).queryByRole('button', { name: /Modifica|Accedi/ })).toBeNull();
   });
 
   it('opening a reset link asks for a new password straight away', () => {

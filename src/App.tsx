@@ -22,11 +22,15 @@ import type { Catalog, ChangelogEntry, State, Stock } from './lib/types';
 export interface SyncApi extends AuthApi {
   getInfo(): SyncInfo;
   onInfo(cb: () => void): () => void;
+  getVolumi(): Record<string, string>;
+  onVolumi(cb: () => void): () => void;
+  saveVolumi(id: string, text: string): Promise<void>;
   setPassword(password: string): Promise<void>;
   endRecovery(): void;
   signOut(): Promise<void>;
 }
-const NO_SYNC: SyncInfo = { status: 'local', account: null, error: '', recovery: false };
+const NO_SYNC: SyncInfo = { status: 'local', account: null, error: '', recovery: false, editor: false };
+const NO_VOLUMI: Record<string, string> = {};
 const noopSub = () => () => {};
 
 export interface AppData { catalog: Catalog; volumi: Record<string, string>; changelog: ChangelogEntry[] }
@@ -37,6 +41,7 @@ const TITLES: Record<View, string> = { catalog: 'Catalogo buste', cart: 'Carrell
 export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; store: StateStore; sync?: SyncApi; repo?: string }) {
   const [st, setSt] = useState<State>(() => store.load() ?? emptyState());
   const info = useSyncExternalStore(sync?.onInfo ?? noopSub, sync?.getInfo ?? (() => NO_SYNC));
+  const sharedVolumi = useSyncExternalStore(sync?.onVolumi ?? noopSub, sync?.getVolumi ?? (() => NO_VOLUMI));
   // State that arrives on its own (another device, first sign-in) replaces what's on screen.
   useEffect(() => store.subscribe?.(s => setSt(s)), [store]);
   const [view, setView] = useState<View>('catalog');
@@ -71,7 +76,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
     });
   }, [store]);
 
-  const rows = useMemo(() => toRows(data.catalog, data.volumi), [data]);
+  const rows = useMemo(() => toRows(data.catalog, data.volumi, sharedVolumi), [data, sharedVolumi]);
   const byId = useMemo(() => new Map(rows.map(r => [r.id, r])), [rows]);
   const visible = useMemo(() => sortRows(filterRows(rows, st, filters), st, sort), [rows, st, filters, sort]);
 
@@ -152,7 +157,10 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
       </main>
 
       {overlay?.kind === 'detail' && ov && (
-        <DetailModal r={ov} owned={!!st.owned[ov.id]} stock={st.stock[ov.id] ?? ''} qty={st.cart[ov.id]?.qty ?? 0} repo={repo}
+        <DetailModal r={ov} owned={!!st.owned[ov.id]} stock={st.stock[ov.id] ?? ''} qty={st.cart[ov.id]?.qty ?? 0}
+          volumiEdit={!sync ? { kind: 'off' } : !info.account ? { kind: 'signin', onSignIn: () => setOverlay({ kind: 'login' }) }
+            : !info.editor ? { kind: 'readonly' }
+            : { kind: 'edit', save: async t => { await sync.saveVolumi(ov.id, t); toast('Volumi salvati per tutti.'); } }}
           onClose={() => setOverlay(null)} onToggleOwned={() => onToggleOwned(ov.id)}
           onStock={v => update(s => setStock(s, ov.id, v))} onBuy={() => setOverlay({ kind: 'buy', id: ov.id })} />
       )}

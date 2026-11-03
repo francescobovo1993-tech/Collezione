@@ -30,6 +30,11 @@ export interface Remote {
   signOut(): Promise<void>;
   fetch(userId: string): Promise<State | null>;
   put(userId: string, state: State): Promise<void>;
+  /** Shared Volumi notes (same for everyone). */
+  fetchVolumi(): Promise<Record<string, string>>;
+  putVolumi(id: string, text: string, byEmail: string): Promise<void>;
+  /** Whether the signed-in account may edit the shared Volumi. */
+  isEditor(email: string): Promise<boolean>;
 }
 
 export type SyncStatus = 'local' | 'loading' | 'synced' | 'saving' | 'error';
@@ -37,6 +42,8 @@ export interface SyncInfo {
   status: SyncStatus;
   account: Account | null;
   error: string;
+  /** Signed in and allowed to edit the shared Volumi notes. */
+  editor: boolean;
   /** True after opening a password-reset link: the app should ask for a new password. */
   recovery: boolean;
 }
@@ -46,7 +53,9 @@ export const BACKUP_KEY = 'wrbuste.state.v1.backup';
 export class SyncedStore implements StateStore {
   private listeners = new Set<(s: State) => void>();
   private infoListeners = new Set<() => void>();
-  private info: SyncInfo = { status: 'local', account: null, error: '', recovery: false };
+  private info: SyncInfo = { status: 'local', account: null, error: '', recovery: false, editor: false };
+  private volumi: Record<string, string> = {};
+  private volumiListeners = new Set<() => void>();
   private timer: ReturnType<typeof setTimeout> | undefined;
   private pending: State | null = null;
   private saving = false;
@@ -91,10 +100,38 @@ export class SyncedStore implements StateStore {
     this.setInfo({ recovery: false });
   };
   endRecovery = () => this.setInfo({ recovery: false });
+
+  /* ---------- shared Volumi ---------- */
+  getVolumi = (): Record<string, string> => this.volumi;
+  onVolumi = (cb: () => void): (() => void) => {
+    this.volumiListeners.add(cb);
+    return () => { this.volumiListeners.delete(cb); };
+  };
+  async loadVolumi(): Promise<void> {
+    try { this.setVolumiMap(await this.remote.fetchVolumi()); } catch { /* keep what we have */ }
+  }
+  /** Save a shared note. Shows at once; rolls back and rejects with a message if the save fails. */
+  saveVolumi = async (id: string, text: string): Promise<void> => {
+    const acc = this.info.account;
+    if (!acc) throw new Error('Accedi per modificare i volumi.');
+    if (!this.info.editor) throw new Error('Il tuo account non può modificare i volumi.');
+    const before = this.volumi;
+    this.setVolumiMap({ ...before, [id]: text.trim() });
+    try {
+      await this.remote.putVolumi(id, text.trim(), acc.email);
+    } catch (e) {
+      this.setVolumiMap(before);
+      throw e instanceof Error ? e : new Error(String(e));
+    }
+  };
+  private setVolumiMap(v: Record<string, string>) {
+    this.volumi = v;
+    this.volumiListeners.forEach(cb => cb());
+  }
   signOut = async () => {
     await this.flush();
     await this.remote.signOut().catch(() => {});
-    this.setInfo({ account: null, status: 'local', error: '' });
+    this.setInfo({ account: null, status: 'local', error: '', editor: false });
   };
 
   /** Begin listening for sign-in/out and tab focus. Returns a stop function. */
@@ -102,14 +139,25 @@ export class SyncedStore implements StateStore {
     let authEvent = false;
     const off = this.remote.onAuthChange(a => { authEvent = true; this.useAccount(a); });
     const offRecovery = this.remote.onPasswordRecovery(() => this.setInfo({ recovery: true }));
+    void this.loadVolumi();
     // The initial check can resolve after a newer auth event: then it's stale, ignore it.
     void this.remote.getAccount().then(a => { if (!authEvent) this.useAccount(a); }).catch(e => this.fail(e));
     const onVisible = () => {
       if (document.visibilityState !== 'visible' || !this.info.account) return;
       if (this.pending) void this.flush(); else void this.pull();
     };
-    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible);
-    return () => { off(); offRecovery(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible); };
+    const onVisibleVolumi = () => { if (document.visibilityState === 'visible') void this.loadVolumi(); };
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', onVisible);
+      document.addEventListener('visibilitychange', onVisibleVolumi);
+    }
+    return () => {
+      off(); offRecovery();
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisible);
+        document.removeEventListener('visibilitychange', onVisibleVolumi);
+      }
+    };
   }
 
   /** Wait for any pending online save. */
@@ -139,9 +187,12 @@ export class SyncedStore implements StateStore {
   private useAccount(a: Account | null) {
     const prev = this.info.account;
     if (a?.id === prev?.id) return;
-    if (!a) { this.setInfo({ account: null, status: 'local' }); return; }
-    this.setInfo({ account: a, status: 'loading', error: '' });
+    if (!a) { this.setInfo({ account: null, status: 'local', editor: false }); return; }
+    this.setInfo({ account: a, status: 'loading', error: '', editor: false });
     void this.pull();
+    void this.remote.isEditor(a.email)
+      .then(ok => { if (this.info.account?.id === a.id) this.setInfo({ editor: ok }); })
+      .catch(() => {});
   }
 
   async pull(): Promise<void> {

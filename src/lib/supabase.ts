@@ -23,6 +23,9 @@ export function authMessage(e: unknown): string {
     case 'validation_failed': return 'Controlla l’indirizzo email.';
     case 'same_password': return 'La nuova password deve essere diversa da quella attuale.';
     case 'reauthentication_needed': return 'Per sicurezza esci e accedi di nuovo, poi cambia la password.';
+    case '42501': return 'Il tuo account non può modificare i volumi.';
+    case '42P01':
+    case 'PGRST205': return 'La tabella dei volumi non esiste ancora: esegui supabase/volumi.sql in Supabase.';
   }
   if (err?.status === 0 || /fetch/i.test(err?.message ?? '')) return 'Nessuna connessione: riprova.';
   return err?.message || 'Qualcosa è andato storto: riprova.';
@@ -82,5 +85,20 @@ export class SupabaseRemote implements Remote {
   async put(userId: string, state: State) {
     const { error } = await this.db.from('user_state').upsert({ user_id: userId, state, updated_at: new Date().toISOString() });
     if (error) throw error;
+  }
+  async fetchVolumi(): Promise<Record<string, string>> {
+    const { data, error } = await this.db.from('volumi').select('id, text');
+    if (error) throw error;
+    return Object.fromEntries((data ?? []).map(r => [r.id as string, (r.text as string) ?? '']));
+  }
+  async putVolumi(id: string, text: string, byEmail: string) {
+    const { error } = await this.db.from('volumi').upsert({ id, text, updated_by: byEmail, updated_at: new Date().toISOString() });
+    if (error) rethrow(error);
+  }
+  async isEditor(email: string) {
+    // Row-level security only ever returns your own row, so "any row" = "I'm an editor".
+    const { data, error } = await this.db.from('editors').select('email').limit(1);
+    if (error) return false;
+    return (data ?? []).some(r => String(r.email).toLowerCase() === email.toLowerCase());
   }
 }
