@@ -10,9 +10,19 @@ class FakeRemote implements Remote {
   account: Account | null = null;
   failPut = false;
   private cbs = new Set<(a: Account | null) => void>();
+  recover: () => void = () => {};
+  passwords = new Map<string, string>();
   async getAccount() { return this.account; }
   onAuthChange(cb: (a: Account | null) => void) { this.cbs.add(cb); return () => { this.cbs.delete(cb); }; }
   async signIn() { this.login({ id: 'u1', email: 'bobbi@example.com', name: 'Bobbi' }); }
+  onPasswordRecovery(cb: () => void) { this.recover = cb; return () => {}; }
+  async signInWithPassword(email: string, pw: string) {
+    if (this.passwords.get(email) !== pw) throw new Error('Email o password non corretti.');
+    this.login({ id: 'u1', email, name: email });
+  }
+  async signUp() { return 'confirm-email' as const; }
+  async sendPasswordReset() {}
+  async setPassword(pw: string) { if (this.account) this.passwords.set(this.account.email, pw); }
   async signOut() { this.login(null); }
   async fetch(id: string) { return this.rows.get(id) ?? null; }
   async put(id: string, s: State) {
@@ -112,6 +122,29 @@ describe('SyncedStore', () => {
     expect(s.load()).toEqual(next);
     await s.flush();
     expect(remote.rows.get('u1')).toEqual(next);
+  });
+
+  it('a Google account can add a password, then sign in with it as the same user', async () => {
+    const s = new SyncedStore(new MemoryStore(mine), remote, 0);
+    s.start();
+    await s.signIn();
+    await tick();
+    await s.setPassword('segreta123');
+    await s.signOut();
+    await expect(s.signInWithPassword('bobbi@example.com', 'sbagliata')).rejects.toThrow('Email o password non corretti.');
+    await s.signInWithPassword('bobbi@example.com', 'segreta123');
+    await tick();
+    expect(s.getInfo().account?.id).toBe('u1');
+  });
+
+  it('a password-reset link turns on recovery until the new password is saved', async () => {
+    remote.account = { id: 'u1', email: 'b@x', name: 'B' };
+    const s = new SyncedStore(new MemoryStore(mine), remote, 0);
+    s.start(); await tick();
+    remote.recover();
+    expect(s.getInfo().recovery).toBe(true);
+    await s.setPassword('nuovapass1');
+    expect(s.getInfo().recovery).toBe(false);
   });
 
   it('signing out flushes pending changes and returns to browser-only', async () => {

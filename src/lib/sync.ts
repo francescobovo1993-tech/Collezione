@@ -12,25 +12,41 @@ import type { State } from './types';
 
 export interface Account { id: string; email: string; name: string }
 
+/** Result of creating an account with email + password. */
+export type SignUpResult = 'signed-in' | 'confirm-email';
+
 /** What the sync needs from a backend. Supabase implements it in supabase.ts; tests use a fake. */
 export interface Remote {
   getAccount(): Promise<Account | null>;
   onAuthChange(cb: (a: Account | null) => void): () => void;
-  signIn(): Promise<void>;
+  /** Called when the user arrives from a "reset password" email link. */
+  onPasswordRecovery(cb: () => void): () => void;
+  signIn(): Promise<void>; // Google
+  signInWithPassword(email: string, password: string): Promise<void>;
+  signUp(email: string, password: string): Promise<SignUpResult>;
+  sendPasswordReset(email: string): Promise<void>;
+  /** Set or change the signed-in user's password (also adds password sign-in to a Google account). */
+  setPassword(password: string): Promise<void>;
   signOut(): Promise<void>;
   fetch(userId: string): Promise<State | null>;
   put(userId: string, state: State): Promise<void>;
 }
 
 export type SyncStatus = 'local' | 'loading' | 'synced' | 'saving' | 'error';
-export interface SyncInfo { status: SyncStatus; account: Account | null; error: string }
+export interface SyncInfo {
+  status: SyncStatus;
+  account: Account | null;
+  error: string;
+  /** True after opening a password-reset link: the app should ask for a new password. */
+  recovery: boolean;
+}
 
 export const BACKUP_KEY = 'wrbuste.state.v1.backup';
 
 export class SyncedStore implements StateStore {
   private listeners = new Set<(s: State) => void>();
   private infoListeners = new Set<() => void>();
-  private info: SyncInfo = { status: 'local', account: null, error: '' };
+  private info: SyncInfo = { status: 'local', account: null, error: '', recovery: false };
   private timer: ReturnType<typeof setTimeout> | undefined;
   private pending: State | null = null;
   private saving = false;
@@ -66,6 +82,15 @@ export class SyncedStore implements StateStore {
     return () => { this.infoListeners.delete(cb); };
   };
   signIn = () => this.remote.signIn().catch(e => this.fail(e));
+  // These reject with a user-facing message, so the login form can show it.
+  signInWithPassword = (email: string, password: string) => this.remote.signInWithPassword(email, password);
+  signUp = (email: string, password: string) => this.remote.signUp(email, password);
+  sendPasswordReset = (email: string) => this.remote.sendPasswordReset(email);
+  setPassword = async (password: string) => {
+    await this.remote.setPassword(password);
+    this.setInfo({ recovery: false });
+  };
+  endRecovery = () => this.setInfo({ recovery: false });
   signOut = async () => {
     await this.flush();
     await this.remote.signOut().catch(() => {});
@@ -76,6 +101,7 @@ export class SyncedStore implements StateStore {
   start(): () => void {
     let authEvent = false;
     const off = this.remote.onAuthChange(a => { authEvent = true; this.useAccount(a); });
+    const offRecovery = this.remote.onPasswordRecovery(() => this.setInfo({ recovery: true }));
     // The initial check can resolve after a newer auth event: then it's stale, ignore it.
     void this.remote.getAccount().then(a => { if (!authEvent) this.useAccount(a); }).catch(e => this.fail(e));
     const onVisible = () => {
@@ -83,7 +109,7 @@ export class SyncedStore implements StateStore {
       if (this.pending) void this.flush(); else void this.pull();
     };
     if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible);
-    return () => { off(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible); };
+    return () => { off(); offRecovery(); if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible); };
   }
 
   /** Wait for any pending online save. */

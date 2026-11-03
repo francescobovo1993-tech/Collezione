@@ -73,7 +73,8 @@ a minute or two. The refresh never touches this file.
 
 Always saved in the browser (`localStorage`, key `wrbuste.state.v1`).
 
-**Sync (optional):** with a Supabase project configured, **Impostazioni → Accedi con Google** also saves
+**Sync (optional):** with a Supabase project configured, **Impostazioni → Accedi o crea un account**
+(Google, or email + password; same email = same account) also saves
 marks to your account (one row per person, protected by row-level security), so they follow you to
 every device. Setup: [SUPABASE.md](SUPABASE.md). Without it the app is browser-only.
 

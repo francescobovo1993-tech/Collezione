@@ -13,22 +13,24 @@ import {
   addPoche, clearCart, emptyState, exportState, importFromSheet, normState, removeFromCart, setCartQty, setStock, toggleOwned,
   type StateStore, type Who,
 } from './lib/state';
+import { LoginModal, PasswordModal, type AuthApi } from './components/AuthModals';
 import type { SyncInfo } from './lib/sync';
 import type { Catalog, ChangelogEntry, SheetSeed, State, Stock } from './lib/types';
 
 /** Account + sync controls (SyncedStore). Absent when the build has no Supabase project. */
-export interface SyncApi {
+export interface SyncApi extends AuthApi {
   getInfo(): SyncInfo;
   onInfo(cb: () => void): () => void;
-  signIn(): Promise<void>;
+  setPassword(password: string): Promise<void>;
+  endRecovery(): void;
   signOut(): Promise<void>;
 }
-const NO_SYNC: SyncInfo = { status: 'local', account: null, error: '' };
+const NO_SYNC: SyncInfo = { status: 'local', account: null, error: '', recovery: false };
 const noopSub = () => () => {};
 
 export interface AppData { catalog: Catalog; volumi: Record<string, string>; sheet: SheetSeed; changelog: ChangelogEntry[] }
 type View = 'catalog' | 'cart' | 'log';
-type Overlay = { kind: 'detail'; id: string } | { kind: 'buy'; id: string } | null;
+type Overlay = { kind: 'detail'; id: string } | { kind: 'buy'; id: string } | { kind: 'login' } | { kind: 'password' } | null;
 const TITLES: Record<View, string> = { catalog: 'Catalogo buste', cart: 'Carrello', log: 'Aggiornamenti WR' };
 
 export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; store: StateStore; sync?: SyncApi; repo?: string }) {
@@ -109,7 +111,7 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
   const cartPcs = cartItems.reduce((s, c) => s + c.qty, 0);
 
 
-  const ov = overlay && byId.get(overlay.id);
+  const ov = (overlay?.kind === 'detail' || overlay?.kind === 'buy') ? byId.get(overlay.id) : undefined;
   return (
     <div className="app">
       <aside className="side">
@@ -121,7 +123,8 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
           </button>
           <button data-view="log" aria-current={view === 'log' ? 'page' : undefined} onClick={() => go('log')}><IcRefresh /><span className="lbl">Aggiornamenti</span></button>
           <div className="sep" />
-          <Settings onExport={exportFile} onImport={importFile} onSheet={doImportSheet} sync={sync} info={info} />
+          <Settings onExport={exportFile} onImport={importFile} onSheet={doImportSheet} sync={sync} info={info}
+            onLogin={() => setOverlay({ kind: 'login' })} onPassword={() => setOverlay({ kind: 'password' })} />
         </nav>
         <div className="side-foot">
           Fonte: <a href={WR_URL} target="_blank" rel="noopener" style={{ color: 'inherit' }}>wrbuste.it</a>
@@ -163,6 +166,11 @@ export function App({ data, store, sync, repo = GITHUB_REPO }: { data: AppData; 
           onSave={q => { update(s => setCartQty(s, ov.id, q)); setOverlay(null); toast(`${q} × ${ov.name} nel carrello.`); }}
           onRemove={() => { update(s => removeFromCart(s, ov.id)); setOverlay(null); toast('Tolto dal carrello.'); }} />
       )}
+      {sync && overlay?.kind === 'login' && !info.account && <LoginModal api={sync} toast={toast} onClose={() => setOverlay(null)} />}
+      {sync && info.account && (info.recovery || overlay?.kind === 'password') && (
+        <PasswordModal email={info.account.email} recovery={info.recovery} toast={toast} onSave={sync.setPassword}
+          onClose={() => { sync.endRecovery(); setOverlay(null); }} />
+      )}
       <div id="toast" role="status" aria-live="polite" hidden={!toastMsg}>{toastMsg}</div>
     </div>
   );
@@ -180,8 +188,9 @@ function SyncLine({ info, enabled }: { info: SyncInfo; enabled: boolean }) {
   return <span className={'sync-line ' + info.status} title={info.error || undefined}>{text}</span>;
 }
 
-function Settings({ onExport, onImport, onSheet, sync, info }: {
+function Settings({ onExport, onImport, onSheet, sync, info, onLogin, onPassword }: {
   onExport: () => void; onImport: (f: File | undefined) => void; onSheet: (who: Who) => void; sync?: SyncApi; info: SyncInfo;
+  onLogin: () => void; onPassword: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -208,10 +217,11 @@ function Settings({ onExport, onImport, onSheet, sync, info }: {
                 <span>{info.account.email}</span>
                 <span className={'sync-line ' + info.status}>{SYNC_TEXT[info.status]}</span>
               </div>
+              <button role="menuitem" onClick={() => { setOpen(false); onPassword(); }}>Imposta password</button>
               <button role="menuitem" onClick={() => { setOpen(false); void sync.signOut(); }}>Esci</button>
             </>
           ) : (
-            <button role="menuitem" onClick={() => { setOpen(false); void sync.signIn(); }}><GoogleG />Accedi con Google</button>
+            <button role="menuitem" onClick={() => { setOpen(false); onLogin(); }}>Accedi o crea un account</button>
           ))}
           {sync && <div className="menu-sep" />}
           <button role="menuitem" onClick={() => { setOpen(false); onExport(); }}>Esporta stato (JSON)</button>
@@ -228,11 +238,3 @@ function Settings({ onExport, onImport, onSheet, sync, info }: {
   );
 }
 
-const GoogleG = () => (
-  <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
-    <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
-    <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-    <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z" />
-    <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
-  </svg>
-);

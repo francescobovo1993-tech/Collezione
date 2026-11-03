@@ -61,7 +61,7 @@ so they go in plain repository *variables*, not secrets.
 
 ## 5. Try it
 
-1. Open the site → **Impostazioni** → **Accedi con Google** → pick your account.
+1. Open the site → **Impostazioni** → **Accedi o crea un account** → **Continua con Google** → pick your account.
 2. Back in the app, the bottom-left says *Spunte sincronizzate sul tuo account.* (a green dot appears on
    Impostazioni).
    - First time: the marks already in that browser are uploaded to your account.
@@ -71,6 +71,26 @@ so they go in plain repository *variables*, not secrets.
    re-reads your account, so edits from your other devices show up.
 4. Pomo: open the site, sign in with his Google account, then Impostazioni →
    **Importa dal vecchio foglio: Pomo** to bring in his owned list.
+
+## 6. Email + password (optional, already on)
+
+The login window (**Impostazioni → Accedi o crea un account**) also offers email + password.
+Supabase has it on by default: check **Authentication → Sign In / Providers → Email** is enabled and
+**Confirm email** is on. No other setup.
+
+One person = one account, however they sign in. Supabase links them by email:
+- **Google first:** signed in with Google → Impostazioni → **Imposta password**. From then on you can
+  also sign in with that Gmail address and the password.
+- **Password first:** create the account, confirm it from the email, and later use
+  **Continua con Google** with the same Gmail: Supabase joins the two automatically.
+- **Forgot the password:** *Password dimenticata?* sends a link; opening it asks for a new password.
+
+Notes:
+- Supabase's built-in email sender only sends a few emails per hour. Fine for two people.
+  Emails may land in spam the first time.
+- Unlike Google (limited to your test users), anyone with the link could create an email account.
+  They'd only ever see their own empty row, never your marks. To block that once you and Pomo have
+  accounts: **Authentication → Sign In / Providers → Allow new users to sign up** → off.
 
 ## Good to know
 
