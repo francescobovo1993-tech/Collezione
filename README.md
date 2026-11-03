@@ -71,22 +71,28 @@ a minute or two. The refresh never touches this file.
 
 ## Personal state (owned / Scorte / Carrello)
 
-Saved per browser in `localStorage` (`wrbuste.state.v1`). Nothing is sent anywhere.
+Always saved in the browser (`localStorage`, key `wrbuste.state.v1`).
 
-- **Back up / move to another device:** Impostazioni → **Esporta stato (JSON)**, then on the other device
-  Impostazioni → **Importa stato (JSON)**.
+**Sync (optional):** with a Supabase project configured, **Impostazioni → Accedi con Google** also saves
+marks to your account (one row per person, protected by row-level security), so they follow you to
+every device. Setup: [SUPABASE.md](SUPABASE.md). Without it the app is browser-only.
+
+- **Back up / move by hand:** Impostazioni → **Esporta stato (JSON)**, then **Importa stato (JSON)** elsewhere.
 - **First visit:** the banner offers *Sono Bobbi* / *Sono Pomo* (import from the old sheet),
   *Parto da zero*, or *Importa il mio stato* (e.g. `seed/bobbi-state-seed.json`).
 
-Storage sits behind the `StateStore` interface in `src/lib/state.ts`, so a synced backend can replace it later.
+Code: `StateStore` in `src/lib/state.ts` (browser), `SyncedStore` in `src/lib/sync.ts` (sync rules),
+`src/lib/supabase.ts` (the Supabase backend), `supabase/schema.sql` (table + policies).
 
 ## Sharing with Pomo
 
-Send Pomo the site link. The catalogue is shared; marks are not: on first visit Pomo presses
-**Sono Pomo** and gets his own owned list from the old sheet, saved in his browser only.
+Send Pomo the site link. The catalogue is shared; marks are personal.
+- With sync on: add his Gmail to the Google test users (see SUPABASE.md); he signs in with Google.
+- Either way, on first visit he presses **Sono Pomo** to import his owned list from the old sheet.
 
 ## Deploy
 
 1. Push to `main`.
 2. In the repo on GitHub: **Settings → Pages → Source: GitHub Actions** (once).
-3. The **Deploy to GitHub Pages** workflow tests, builds and publishes.
+3. The **Deploy to GitHub Pages** workflow lints, tests, builds and publishes.
+   Optional repo variables `SUPABASE_URL` and `SUPABASE_ANON_KEY` turn on sync.

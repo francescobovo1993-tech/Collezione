@@ -29,6 +29,9 @@ jobs:
       - run: npm run build
         env:
           VITE_GITHUB_REPO: ${{ github.repository }}
+          # Optional: set these repo variables to turn on Google sign-in + sync (see SUPABASE.md).
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
         with:

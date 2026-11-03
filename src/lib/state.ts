@@ -22,6 +22,8 @@ export function normState(v: unknown): State {
 export interface StateStore {
   load(): State | null;
   save(state: State): void;
+  /** Optional: stores that can change on their own (e.g. synced from another device) push new state here. */
+  subscribe?(cb: (state: State) => void): () => void;
 }
 
 export class LocalStorageStore implements StateStore {

@@ -136,3 +136,49 @@ describe('Aggiornamenti', () => {
       .toBe('https://github.com/owner/repo/actions/workflows/refresh-wr.yml');
   });
 });
+
+describe('account menu', () => {
+  const fakeSync = (account: { id: string; email: string; name: string } | null) => {
+    const calls: string[] = [];
+    const info = { status: account ? 'synced' as const : 'local' as const, account, error: '' };
+    return {
+      calls,
+      api: {
+        getInfo: () => info,
+        onInfo: () => () => {},
+        signIn: async () => { calls.push('in'); },
+        signOut: async () => { calls.push('out'); },
+      },
+    };
+  };
+  it('offers Google sign-in when sync is available', () => {
+    const f = fakeSync(null);
+    render(<App data={data} store={new MemoryStore(normState(bobbi))} sync={f.api} repo="" />);
+    expect(screen.getByText(/Accedi per sincronizzarle/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Impostazioni/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Accedi con Google/ }));
+    expect(f.calls).toEqual(['in']);
+  });
+  it('shows the signed-in account and Esci', () => {
+    const f = fakeSync({ id: 'u1', email: 'bobbi@example.com', name: 'Bobbi' });
+    render(<App data={data} store={new MemoryStore(normState(bobbi))} sync={f.api} repo="" />);
+    fireEvent.click(screen.getByRole('button', { name: /Impostazioni/ }));
+    expect(screen.getByText('bobbi@example.com')).toBeTruthy();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Esci' }));
+    expect(f.calls).toEqual(['out']);
+  });
+  it('without sync there is no sign-in option', () => {
+    setup();
+    fireEvent.click(screen.getByRole('button', { name: /Impostazioni/ }));
+    expect(screen.queryByText(/Accedi con Google/)).toBeNull();
+    expect(screen.getByText('Le tue spunte sono salvate solo in questo browser.')).toBeTruthy();
+  });
+  it('state pushed by the store (another device) replaces the screen', () => {
+    let push: (s: ReturnType<typeof normState>) => void = () => {};
+    const store = Object.assign(new MemoryStore(normState({ imported: 'none' })), { subscribe: (cb: typeof push) => { push = cb; return () => {}; } });
+    render(<App data={data} store={store} repo="" />);
+    expect(within(row('fumetti~a3')).getByRole('switch').getAttribute('aria-checked')).toBe('false');
+    act(() => push(normState({ owned: { 'fumetti~a3': true }, imported: 'bobbi' })));
+    expect(within(row('fumetti~a3')).getByRole('switch').getAttribute('aria-checked')).toBe('true');
+  });
+});
