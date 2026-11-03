@@ -45,5 +45,5 @@ revoke insert, update, delete on public.editors from anon, authenticated;
 -- Editors. Add or remove people here (or in Table Editor → editors).
 insert into public.editors (email) values
   ('francesco.bovo1993@gmail.com'),
-  ('POMO-EMAIL@gmail.com')            -- ← replace with Pomo's email
+  ('pomo_7@hotmail.it')       
 on conflict do nothing;
