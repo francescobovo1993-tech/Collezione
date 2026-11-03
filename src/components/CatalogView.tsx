@@ -3,8 +3,8 @@ import { dimsOf, eur } from '../lib/format';
 import { filterRows, type Filters, type Show, type Sort, type SortKey } from '../lib/rows';
 import type { Row, State, Stock } from '../lib/types';
 import { useState } from 'react';
-import { IcCheck, IcDown, IcSearch, IcSort, IcSortArrows, IcUp } from './icons';
-import { Modal } from './Modal';
+import { FullSheet, RadioSection } from './FullSheet';
+import { IcDown, IcSearch, IcSort, IcSortArrows, IcUp } from './icons';
 
 export const COLS: { k: SortKey; label: string; cls: string; sortLabel: string }[] = [
   { k: 'owned', label: 'Ce l’ho', cls: 'c-own', sortLabel: 'Possedute prima' },
@@ -89,25 +89,25 @@ export function CatalogView(p: Props) {
           </table>
         </div>
       </section>
-      {sheet === 'sort' && (
-        <Modal labelledBy="sortTitle" sheet onClose={() => setSheet(null)}>
-          <h2 id="sortTitle">Ordina per</h2>
-          <div className="opts" role="group" aria-label="Direzione" style={{ margin: '8px 0 14px' }}>
-            <button className="opt" aria-pressed={sort.dir > 0} onClick={() => p.onSort({ ...sort, dir: 1 })}>Crescente ↑</button>
-            <button className="opt" aria-pressed={sort.dir < 0} onClick={() => p.onSort({ ...sort, dir: -1 })}>Decrescente ↓</button>
-          </div>
-          <div className="group" role="radiogroup" aria-label="Ordina per">
-            {COLS.map(c => (
-              <button key={c.k} className="choice" role="radio" aria-checked={sort.key === c.k}
-                onClick={() => { p.onSort({ key: c.k, dir: sort.dir }); setSheet(null); }}>
-                <span className="t"><b>{c.sortLabel}</b></span>
-                <span className="chev">{sort.key === c.k && <IcCheck />}</span>
-              </button>
-            ))}
-          </div>
-        </Modal>
-      )}
+      {sheet === 'sort' && <SortSheet sort={sort} onApply={p.onSort} onClose={() => setSheet(null)} />}
     </div>
+  );
+}
+
+function SortSheet({ sort, onApply, onClose }: { sort: Sort; onApply: (s: Sort) => void; onClose: () => void }) {
+  const [draft, setDraft] = useState<Sort>(sort);
+  return (
+    <FullSheet title="Ordina" action="Applica" onClose={onClose} onAction={() => { onApply(draft); onClose(); }}>
+      <RadioSection label="Ordina per" collapsedCount={5} value={draft.key}
+        options={COLS.map(c => ({ value: c.k, label: c.sortLabel }))}
+        onChange={k => setDraft({ ...draft, key: k })} />
+      <RadioSection label="Direzione" value={draft.dir}
+        options={[
+          { value: 1 as const, label: 'Crescente', hint: 'A → Z, dal più piccolo' },
+          { value: -1 as const, label: 'Decrescente', hint: 'Z → A, dal più grande' },
+        ]}
+        onChange={d => setDraft({ ...draft, dir: d })} />
+    </FullSheet>
   );
 }
 

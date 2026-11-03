@@ -320,16 +320,28 @@ describe('mobile chrome', () => {
     expect(document.querySelector('.card-tb')!.textContent).not.toMatch(/Carrello/);
   });
 
-  it('Ordina sheet changes field and direction', () => {
+  it('Ordina sheet (Revolut style): choices apply only on Applica', () => {
     setup();
     fireEvent.click(screen.getByRole('button', { name: /^Ordina: Lato A decrescente/ }));
-    const sheet = screen.getByRole('dialog');
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Crescente ↑' }));
+    let sheet = screen.getByRole('dialog', { name: 'Ordina' });
+    // The list starts collapsed to 5 options; Formato (3rd) and Lato A (4th) are visible.
     fireEvent.click(within(sheet).getByRole('radio', { name: 'Formato' }));
+    fireEvent.click(within(sheet).getByRole('radio', { name: /^Crescente/ }));
+    expect(screen.getByRole('button', { name: /^Ordina: Lato A decrescente/ })).toBeTruthy(); // not applied yet
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Applica' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('button', { name: /^Ordina: Formato crescente/ })).toBeTruthy();
     const names = [...document.querySelectorAll('tbody tr .nm')].slice(0, 2).map(e => e.textContent);
     expect(names).toEqual(['220x325 mm', '240x270 mm']);
+
+    // Closing with X discards changes; long list collapses behind "Mostra tutto".
+    fireEvent.click(screen.getByRole('button', { name: /^Ordina:/ }));
+    sheet = screen.getByRole('dialog', { name: 'Ordina' });
+    expect(within(sheet).queryByRole('radio', { name: 'Nel carrello' })).toBeNull();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Mostra tutto' }));
+    fireEvent.click(within(sheet).getByRole('radio', { name: 'Nel carrello' }));
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Chiudi' }));
+    expect(screen.getByRole('button', { name: /^Ordina: Formato crescente/ })).toBeTruthy();
   });
 
   it('no category filter anywhere', () => {
