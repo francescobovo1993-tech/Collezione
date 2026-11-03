@@ -11,6 +11,8 @@ Static app (Vite + React + TypeScript), deployed to GitHub Pages.
 npm install
 npm run dev      # http://localhost:5173
 npm test         # unit + UI tests
+npm run lint     # ESLint
+npm run typecheck
 npm run build    # production build in dist/
 ```
 
@@ -31,25 +33,57 @@ Saving on `main` redeploys the site.
 
 ## Refreshing from wrbuste.it
 
+**From the app:** Aggiornamenti → **Aggiorna da WR** opens the workflow on GitHub. Press **Run workflow**.
+It also runs by itself every Monday.
+
+If WR changed anything, the workflow opens a pull request on the branch `wr-refresh`, with the changes
+listed as Nuovi / Modificati / Non più sul sito. **Merging the PR publishes the update** (Pages redeploys).
+No changes → no PR.
+
+One-time setup: **Settings → Actions → General → Workflow permissions** → tick
+**Allow GitHub Actions to create and approve pull requests**.
+
+**From your computer:**
+
 ```bash
-npm run refresh                       # fetch the live page
-npm run refresh -- --dry-run          # just show what changed
-npm run refresh -- --html page.html   # use a saved copy of the page
-npm run refresh -- --text page.txt    # use text copied from the browser
+npm run refresh                        # fetch the live page
+npm run refresh -- --dry-run           # only show what changed
+npm run refresh -- --html page.html    # use a saved copy of the page
+npm run refresh -- --text page.txt     # use text copied from the browser
 ```
 
-The refresh only touches `catalog.json` and `changelog.json`. It never deletes formats: ones that
-disappear from WR get `removed: true` and show a red "non più su WR" tag. If a section looks
-incomplete, it skips removals for that section.
+How it reads the page: Node `fetch` + cheerio. WR's tables use DataTables with client-side paging, so all
+rows should already be in the HTML; the script checks this. If rows are missing (AJAX tables, empty
+tables), it falls back to Playwright and makes every table show all rows.
 
-The **Refresh from WR** workflow runs it every Monday (and on demand from the Actions tab),
-commits any changes, and the site redeploys.
+It never deletes a format: ones that disappear from WR get `removed: true` and a red "non più su WR" tag.
+It only marks removals for a section it read completely, and never for `source: "manuale"`.
 
-## Personal state
+**Test fixture:** `scripts/fixtures/wr-page.html` is *synthetic* (built from the catalogue, because the real
+site wasn't reachable when it was written). Each workflow run uploads the page it read as the `wr-page`
+artifact: download it and replace the fixture to test against the real markup.
 
-Owned / Scorte / Carrello are stored per browser in `localStorage` (`wrbuste.state.v1`).
-Use **Impostazioni → Esporta / Importa stato (JSON)** to move them between devices.
+## Editing "Volumi"
+
+Volumi (which comics fit each bag) are read-only in the app. To edit them, open a format and press
+**Modifica su GitHub**, or edit `data/volumi.json` on GitHub. Commit to `main` and the site redeploys in
+a minute or two. The refresh never touches this file.
+
+## Personal state (owned / Scorte / Carrello)
+
+Saved per browser in `localStorage` (`wrbuste.state.v1`). Nothing is sent anywhere.
+
+- **Back up / move to another device:** Impostazioni → **Esporta stato (JSON)**, then on the other device
+  Impostazioni → **Importa stato (JSON)**.
+- **First visit:** the banner offers *Sono Bobbi* / *Sono Pomo* (import from the old sheet),
+  *Parto da zero*, or *Importa il mio stato* (e.g. `seed/bobbi-state-seed.json`).
+
 Storage sits behind the `StateStore` interface in `src/lib/state.ts`, so a synced backend can replace it later.
+
+## Sharing with Pomo
+
+Send Pomo the site link. The catalogue is shared; marks are not: on first visit Pomo presses
+**Sono Pomo** and gets his own owned list from the old sheet, saved in his browser only.
 
 ## Deploy
 

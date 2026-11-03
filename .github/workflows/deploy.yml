@@ -4,11 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # Commits made by the refresh workflow don't trigger "push", so deploy after it too.
-  workflow_run:
-    workflows: [Refresh from WR]
-    types: [completed]
-    branches: [main]
 
 permissions:
   contents: read
@@ -21,17 +16,15 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with:
-          ref: main
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm test
       - run: npm run build
         env:

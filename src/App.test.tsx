@@ -125,3 +125,14 @@ describe('first run', () => {
     expect(screen.queryByText('Prima volta qui?')).toBeNull();
   });
 });
+
+describe('Aggiornamenti', () => {
+  it('lists the changelog and links "Aggiorna da WR" to the refresh workflow', () => {
+    setup();
+    fireEvent.click(document.querySelector('.nav button[data-view="log"]')!);
+    expect(screen.getByText('Importazione iniziale: 134 formati')).toBeTruthy();
+    expect(screen.getByText('134 nuovi')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Aggiorna da WR/ }).getAttribute('href'))
+      .toBe('https://github.com/owner/repo/actions/workflows/refresh-wr.yml');
+  });
+});

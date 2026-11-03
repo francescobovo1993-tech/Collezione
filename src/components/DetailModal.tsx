@@ -9,11 +9,12 @@ interface Props {
   onClose: () => void; onToggleOwned: () => void; onStock: (v: Stock | '') => void; onBuy: () => void;
 }
 
+const Info = ({ k, children }: { k: string; children: React.ReactNode }) => (
+  <div className="rowi"><span className="k">{k}</span><span className="v">{children}</span></div>
+);
+
 export function DetailModal({ r, owned, stock, qty, repo, onClose, onToggleOwned, onStock, onBuy }: Props) {
   const editUrl = volumiEditUrl(repo);
-  const Info = ({ k, children }: { k: string; children: React.ReactNode }) => (
-    <div className="rowi"><span className="k">{k}</span><span className="v">{children}</span></div>
-  );
   return (
     <Modal labelledBy="detTitle" wide onClose={onClose}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 6 }}>

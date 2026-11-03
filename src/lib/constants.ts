@@ -18,3 +18,5 @@ export const FIELD_LABEL: Record<string, string> = {
 export const GITHUB_REPO: string = import.meta.env?.VITE_GITHUB_REPO ?? '';
 export const volumiEditUrl = (repo = GITHUB_REPO) =>
   repo ? `https://github.com/${repo}/edit/main/data/volumi.json` : '';
+export const refreshWorkflowUrl = (repo = GITHUB_REPO) =>
+  repo ? `https://github.com/${repo}/actions/workflows/refresh-wr.yml` : '';

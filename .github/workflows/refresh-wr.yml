@@ -1,0 +1,43 @@
+name: Refresh from WR
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 5 * * 1' # every Monday, 05:17 UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Only used if the static HTML turns out to be missing rows.
+      - run: npx playwright install --with-deps chromium
+      - id: refresh
+        run: npm run -s refresh -- --md "$RUNNER_TEMP/changelog.md" --save-html "$RUNNER_TEMP/wr-page.html"
+      - name: Show changelog
+        run: cat "$RUNNER_TEMP/changelog.md" >> "$GITHUB_STEP_SUMMARY"
+      # The page as read, so it can replace scripts/fixtures/wr-page.html.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wr-page
+          path: ${{ runner.temp }}/wr-page.html
+      - if: steps.refresh.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: wr-refresh
+          delete-branch: true
+          add-paths: |
+            data/catalog.json
+            data/changelog.json
+          commit-message: ${{ steps.refresh.outputs.title }}
+          title: ${{ steps.refresh.outputs.title }}
+          body-path: ${{ runner.temp }}/changelog.md

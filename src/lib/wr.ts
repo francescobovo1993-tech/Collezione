@@ -3,7 +3,7 @@ import { FIELDS } from './constants';
 import { makeId, slug } from './format';
 import type { Catalog, CatalogEntry, ChangeItem, ChangelogEntry } from './types';
 
-const SECTION_MAP: [RegExp, string][] = [
+export const SECTION_MAP: [RegExp, string][] = [
   [/CHIUSURA LATERALE/i, 'laterale'], [/SPERIMENTALI/i, 'sperimentali'], [/MUSICA|VIDEOGIOCHI/i, 'musica'],
   [/MANIFESTI|LOCANDINE/i, 'manifesti'], [/FUMETTI/i, 'fumetti'],
 ];
@@ -16,6 +16,14 @@ export interface Section {
   cat: string; label: string; updated: string; total: number | null; rows: ParsedRow[]; blank: number; searched?: boolean;
 }
 
+/** "BUSTE PER <label>" → category key. Order matters: «chiusura laterale» wins over «fumetti». */
+export const sectionCat = (label: string) => SECTION_MAP.find(([re]) => re.test(label))?.[1] ?? 'altro-' + slug(label);
+
+/**
+ * One table row → a format. Rules from the prototype:
+ * size cell "140x178 (mm)", price "12,00", integer = pieces, POLIPROPILENE/micron = material, rest = notes.
+ * The name is the first cell; when the name itself is a size (sperimentali) it also gives a/b.
+ */
 export function parseRow(cells: string[], cat: string): ParsedRow | null {
   const name = cells[0];
   let a: number | null = null, b: number | null = null, price: number | null = null, pack: number | null = null, material = '';
@@ -39,11 +47,10 @@ export function parsePage(txt: string): Section[] {
   const sections: Section[] = [];
   let cur: Section | null = null;
   for (const raw of txt.split(/\r?\n/)) {
-    const line = raw.replace(/ /g, ' ');
+    const line = raw.replace(/\u00a0/g, ' ');
     const h = line.trim().match(/^BUSTE PER (.+)$/i);
     if (h) {
-      const key = SECTION_MAP.find(([re]) => re.test(h[1]))?.[1] ?? 'altro-' + slug(h[1]);
-      cur = { cat: key, label: h[1].trim(), updated: '', total: null, rows: [], blank: 0 };
+      cur = { cat: sectionCat(h[1]), label: h[1].trim(), updated: '', total: null, rows: [], blank: 0 };
       sections.push(cur);
       continue;
     }
@@ -59,30 +66,6 @@ export function parsePage(txt: string): Section[] {
     if (r) cur.rows.push(r);
   }
   return sections;
-}
-
-const ENT: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', times: '×', ndash: '–', egrave: 'è', agrave: 'à', ograve: 'ò', ugrave: 'ù', igrave: 'ì', eacute: 'é' };
-const decode = (s: string) =>
-  s.replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (all, e: string) => {
-    if (e[0] === '#') { const n = e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : parseInt(e.slice(1), 10); return Number.isFinite(n) ? String.fromCodePoint(n) : all; }
-    return ENT[e.toLowerCase()] ?? all;
-  });
-const strip = (s: string) => decode(s.replace(/<[^>]+>/g, ' ')).replace(/[ \t ]+/g, ' ').trim();
-
-/**
- * Turn the raw HTML into the text shape parsePage() expects:
- * each data <tr> becomes one tab-separated line; header rows (<th> only) are dropped.
- */
-export function htmlToText(html: string): string {
-  let s = html.replace(/<(script|style|noscript)[\s\S]*?<\/\1>/gi, ' ').replace(/<!--[\s\S]*?-->/g, ' ');
-  s = s.replace(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi, (_, inner: string) => {
-    const tds = [...inner.matchAll(/<td\b[^>]*>([\s\S]*?)<\/td>/gi)].map(m => strip(m[1]));
-    if (!tds.length) return '\n';
-    while (tds.length < 4) tds.push('');
-    return '\n' + tds.join('\u0001') + '\n';
-  });
-  s = s.replace(/<\/?(p|div|h[1-6]|li|ul|ol|br|section|article|header|footer|table|thead|tbody|caption)\b[^>]*>/gi, '\n');
-  return s.split('\n').map(line => (line.includes('\u0001') ? line.split('\u0001').join('\t') : strip(line))).join('\n');
 }
 
 /* ---------- diff ---------- */
@@ -104,19 +87,17 @@ export interface Diff {
 
 /**
  * Compare parsed sections with the current catalogue.
- * A section only marks missing formats as removed when we know we read all of it:
- * either the DataTables count matched, or (HTML mode) it was server-rendered and didn't shrink by more than half.
+ * A section only marks missing formats as removed when we know we read all of it
+ * (total known and matched) and it didn't shrink by more than half compared with the catalogue.
  */
-export function diffCatalog(current: Catalog, sections: Section[], opts: { fullHtml?: boolean } = {}): Diff {
+export function diffCatalog(current: Catalog, sections: Section[]): Diff {
   const next = new Map<string, ParsedRow & { order: number }>();
   let order = 0;
   const complete = new Set<string>();
   const warns: string[] = [];
   for (const s of sections) {
     for (const r of s.rows) if (!next.has(r.id)) next.set(r.id, { ...r, order: order++ });
-    let ok = s.total == null
-      ? !!opts.fullHtml && s.rows.length > 0
-      : s.rows.length + s.blank >= s.total || (!!s.searched && s.rows.length >= s.total - 5);
+    let ok = s.total != null && (s.rows.length + s.blank >= s.total || (!!s.searched && s.rows.length >= s.total - 5));
     if (ok) {
       const had = Object.values(current).filter(e => e.cat === s.cat && e.source !== 'manuale' && !e.removed).length;
       if (had && s.rows.length < had / 2) {

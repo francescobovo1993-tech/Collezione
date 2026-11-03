@@ -140,7 +140,7 @@ export function App({ data, store, repo = GITHUB_REPO }: { data: AppData; store:
             onAddPoche={() => { const n = addPoche(st, data.catalog).added; update(s => addPoche(s, data.catalog).state); toast(`${n} formati aggiunti al carrello.`); }}
             onClear={() => { update(clearCart); toast('Carrello svuotato.'); }} />
         )}
-        {view === 'log' && <LogView log={data.changelog} />}
+        {view === 'log' && <LogView log={data.changelog} repo={repo} />}
       </main>
 
       {overlay?.kind === 'detail' && ov && (
