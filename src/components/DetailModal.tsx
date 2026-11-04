@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CATS, STOCK_LABEL } from '../lib/constants';
 import { dimsOf, eur } from '../lib/format';
 import type { Row, Stock } from '../lib/types';
+import { Expandable } from './Expandable';
 import { IcEdit } from './icons';
 import { Modal } from './Modal';
 
@@ -59,7 +60,7 @@ export function DetailModal({ r, owned, stock, qty, volumiEdit, onClose, onToggl
       <div className="group">
         <Info k="Misure">{dimsOf(r) || 'Non indicate'}</Info>
         <Info k="Prezzo">{eur(r.price)}{r.pack ? ` per ${r.pack} pz` : ''}</Info>
-        <div className="rowi stack"><span className="k">Note WR</span><span className="v">{r.notes || '—'}</span></div>
+        <div className="rowi stack"><span className="k">Note WR</span><span className="v">{r.notes ? <Expandable text={r.notes} lines={3} /> : '—'}</span></div>
       </div>
     </Modal>
   );

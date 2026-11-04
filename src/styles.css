@@ -345,3 +345,11 @@ a.btn{text-decoration:none;color:inherit}
 }
 /* narrower desktop windows: drop Categoria so Volumi and Note WR keep usable width */
 @media (min-width:861px) and (max-width:1350px){ .c-cat{display:none} table{min-width:880px} }
+
+/* ---------- show more / show less ---------- */
+.xp{display:block}
+.xp-t{display:block;white-space:normal;overflow-wrap:anywhere}
+.xp-t.clamp{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.more{all:unset;cursor:pointer;display:inline-block;margin-top:4px;color:var(--blue);font-weight:600;font-size:13px}
+.more:hover{text-decoration:underline} .more:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+td.c-notes{vertical-align:middle}

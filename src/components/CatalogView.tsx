@@ -4,6 +4,7 @@ import { DEFAULT_SORT, filterRows, type Filters, type Show, type Sort, type Sort
 import type { Row, State, Stock } from '../lib/types';
 import { useState } from 'react';
 import { BottomSheet } from './BottomSheet';
+import { Expandable } from './Expandable';
 import { IcCheck, IcDown, IcSearch, IcSort, IcSortArrows, IcUp } from './icons';
 
 export const COLS: { k: SortKey; label: string; cls: string; sortLabel: string }[] = [
@@ -158,7 +159,7 @@ export function CatalogRow({ r, owned, stock, qty, onToggleOwned, onStock, onOpe
       <td className={'c-vol' + (r.volumi ? '' : ' empty')}>
         <span className="ell" title={r.volumi}>{r.volumi || <span style={{ color: 'var(--faint)' }}>—</span>}</span>
       </td>
-      <td className="c-notes"><span className="ell" title={r.notes}>{r.notes || '—'}</span></td>
+      <td className="c-notes">{r.notes ? <Expandable text={r.notes} lines={2} /> : '—'}</td>
       <td className="c-buy">
         <button className={'buy' + (qty ? ' in' : '')} onClick={() => onBuy(r.id)}>{qty ? qty.toLocaleString('it-IT') + ' pz' : 'Compra'}</button>
       </td>

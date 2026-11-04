@@ -350,3 +350,32 @@ describe('mobile chrome', () => {
     expect(screen.queryByRole('button', { name: /^Filtri/ })).toBeNull();
   });
 });
+
+describe('Note WR show more / show less', () => {
+  it('appears only when the text is cut, and toggles', async () => {
+    // jsdom has no layout: pretend every clamped text overflows.
+    const orig = (globalThis as { ResizeObserver?: unknown }).ResizeObserver;
+    (globalThis as { ResizeObserver?: unknown }).ResizeObserver = class { constructor(private cb: () => void) {} observe() { this.cb(); } disconnect() {} };
+    const sh = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get() { return this.classList?.contains('clamp') ? 100 : 0; } });
+    try {
+      setup();
+      fireEvent.click(within(row('fumetti~bonelli-book')).getByRole('button', { name: 'BONELLI BOOK' }));
+      const dlg = screen.getByRole('dialog');
+      const more = within(dlg).getByRole('button', { name: 'Mostra di più' });
+      expect(dlg.querySelector('.xp-t')!.classList.contains('clamp')).toBe(true);
+      fireEvent.click(more);
+      expect(dlg.querySelector('.xp-t')!.classList.contains('clamp')).toBe(false);
+      fireEvent.click(within(dlg).getByRole('button', { name: 'Mostra di meno' }));
+      expect(dlg.querySelector('.xp-t')!.classList.contains('clamp')).toBe(true);
+    } finally {
+      (globalThis as { ResizeObserver?: unknown }).ResizeObserver = orig;
+      if (sh) Object.defineProperty(HTMLElement.prototype, 'scrollHeight', sh); else delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+    }
+  });
+  it('no link when nothing is cut', () => {
+    setup();
+    fireEvent.click(within(row('fumetti~bonelli-book')).getByRole('button', { name: 'BONELLI BOOK' }));
+    expect(within(screen.getByRole('dialog')).queryByRole('button', { name: /Mostra di/ })).toBeNull();
+  });
+});
