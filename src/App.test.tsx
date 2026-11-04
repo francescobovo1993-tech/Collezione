@@ -62,6 +62,7 @@ describe('detail modal', () => {
     const dlg = screen.getByRole('dialog');
     expect(within(dlg).getByText('Cofanetto Corto Maltese')).toBeTruthy();
     expect(within(dlg).getByText('325×420 mm')).toBeTruthy();
+    expect(within(dlg).queryByText('Materiale')).toBeNull();
     expect(within(dlg).queryByRole('button', { name: /Modifica/ })).toBeNull();
     expect(within(dlg).queryByRole('link')).toBeNull();
   });
@@ -329,12 +330,15 @@ describe('mobile chrome', () => {
     const sheet = screen.getByRole('dialog', { name: 'Ordina per' });
     expect(within(sheet).getByRole('radio', { name: 'Lato A: dal più piccolo' }).getAttribute('aria-checked')).toBe('true');
     expect(within(sheet).queryByRole('button', { name: 'Applica' })).toBeNull();
-    fireEvent.click(within(sheet).getByRole('radio', { name: 'Nome (A → Z)' }));
+    expect(within(sheet).getAllByRole('radio').map(r => r.textContent)).toEqual([
+      'Lato A: dal più piccolo', 'Lato A: dal più grande', 'Lato B: dal più piccolo', 'Lato B: dal più grande',
+    ]);
+    fireEvent.click(within(sheet).getByRole('radio', { name: 'Lato B: dal più grande' }));
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(btn().getAttribute('aria-label')).toBe('Ordina: Nome (A → Z)');
+    expect(btn().getAttribute('aria-label')).toBe('Ordina: Lato B: dal più grande');
     expect(btn().querySelector('.dot-on')).not.toBeNull();
-    const names = [...document.querySelectorAll('tbody tr .nm')].slice(0, 2).map(e => e.textContent);
-    expect(names).toEqual(['220x325 mm', '240x270 mm']);
+    const bs = [...document.querySelectorAll('tbody tr td.c-b')].slice(0, 3).map(e => Number(e.textContent));
+    expect([...bs].sort((x, y) => y - x)).toEqual(bs);
     fireEvent.click(btn());
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();

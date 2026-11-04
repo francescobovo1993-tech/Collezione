@@ -15,24 +15,6 @@ export const Logo = () => (
   </span>
 );
 
-/** Small bag drawing scaled to the format's real proportions (used in the detail modal and cart). */
-export function BagIcon({ a, b, big }: { a: number | null; b: number | null; big?: boolean }) {
-  const box = big ? 30 : 20;
-  const cls = 'ico' + (big ? ' lg' : '');
-  if (!a || !b) {
-    return <span className={cls} aria-hidden="true"><svg width={box * 0.6} height={box * 0.75} viewBox="0 0 12 15"><rect x=".5" y="2.5" width="11" height="12" rx="1" fill="none" stroke="var(--muted)" /><path d="M.5 2.5h11V5H.5z" fill="var(--muted)" opacity=".35" /></svg></span>;
-  }
-  const s = box / 700, w = Math.max(5, a * s), h = Math.max(7, b * s), fl = Math.max(2, h * 0.16);
-  const f = (n: number) => n.toFixed(1);
-  return (
-    <span className={cls} aria-hidden="true">
-      <svg width={f(w)} height={f(h + fl)} viewBox={`0 0 ${f(w)} ${f(h + fl)}`}>
-        <rect x=".5" y={f(fl)} width={f(w - 1)} height={f(h - 0.5)} rx=".8" fill="var(--blue-soft)" stroke="var(--blue)" strokeWidth="1" />
-        <rect x=".5" y=".5" width={f(w - 1)} height={f(fl)} fill="var(--blue)" opacity=".35" />
-      </svg>
-    </span>
-  );
-}
 export const IcMenu = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>;
 export const IcSortArrows = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M7 20V4M3 8l4-4 4 4M17 4v16M13 16l4 4 4-4" /></svg>;
 export const IcCheck = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10" /></svg>;

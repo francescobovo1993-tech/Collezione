@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { CATS, STOCK_LABEL } from '../lib/constants';
 import { dimsOf, eur } from '../lib/format';
 import type { Row, Stock } from '../lib/types';
-import { BagIcon, IcEdit } from './icons';
+import { IcEdit } from './icons';
 import { Modal } from './Modal';
 
 /** What the Volumi row allows: edit, ask to sign in, read only, or nothing (sync not set up). */
@@ -25,7 +25,6 @@ export function DetailModal({ r, owned, stock, qty, volumiEdit, onClose, onToggl
   return (
     <Modal labelledBy="detTitle" wide onClose={onClose}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 6 }}>
-        <BagIcon a={r.a} b={r.b} big />
         <div>
           <h2 id="detTitle" style={{ margin: 0 }}>{r.name}</h2>
           <p className="sub" style={{ margin: 0 }}>
@@ -60,7 +59,6 @@ export function DetailModal({ r, owned, stock, qty, volumiEdit, onClose, onToggl
       <div className="group">
         <Info k="Misure">{dimsOf(r) || 'Non indicate'}</Info>
         <Info k="Prezzo">{eur(r.price)}{r.pack ? ` per ${r.pack} pz` : ''}</Info>
-        <Info k="Materiale">{r.material || '—'}</Info>
         <div className="rowi stack"><span className="k">Note WR</span><span className="v">{r.notes || '—'}</span></div>
       </div>
     </Modal>

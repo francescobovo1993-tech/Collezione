@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { cartLines, cartText, estOf, packsOf, type CopyOpts } from '../lib/cart';
 import { dimsOf, eur } from '../lib/format';
 import type { Row, State } from '../lib/types';
-import { BagIcon, IcRight } from './icons';
+import { IcRight } from './icons';
 
 interface Props {
   st: State; byId: Map<string, Row>; copy: CopyOpts;
@@ -64,7 +64,6 @@ export function CartView({ st, byId, copy, onCopyOpts, onQty, onRemove, onAddPoc
         <div className="group">
           {ls.map(l => (
             <div className="ci" key={l.id} data-id={l.id}>
-              <BagIcon a={l.r.a} b={l.r.b} />
               <span className="n">{l.r.name}</span>
               <div className="p">
                 <div className="q">

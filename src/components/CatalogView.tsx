@@ -101,16 +101,8 @@ const currentSortLabel = (sort: Sort, fallback: string) =>
 export const SORT_OPTIONS: { label: string; sort: Sort }[] = [
   { label: 'Lato A: dal più piccolo', sort: { key: 'a', dir: 1 } },
   { label: 'Lato A: dal più grande', sort: { key: 'a', dir: -1 } },
-  { label: 'Lato B: dal più grande', sort: { key: 'b', dir: -1 } },
   { label: 'Lato B: dal più piccolo', sort: { key: 'b', dir: 1 } },
-  { label: 'Nome (A → Z)', sort: { key: 'name', dir: 1 } },
-  { label: 'Nome (Z → A)', sort: { key: 'name', dir: -1 } },
-  { label: 'Prezzo: dal più basso', sort: { key: 'price', dir: 1 } },
-  { label: 'Prezzo: dal più alto', sort: { key: 'price', dir: -1 } },
-  { label: 'Possedute prima', sort: { key: 'owned', dir: 1 } },
-  { label: 'Scorte: Poche prima', sort: { key: 'stock', dir: 1 } },
-  { label: 'Nel carrello prima', sort: { key: 'cart', dir: 1 } },
-  { label: 'Categoria (A → Z)', sort: { key: 'cat', dir: 1 } },
+  { label: 'Lato B: dal più grande', sort: { key: 'b', dir: -1 } },
 ];
 
 function SortSheet({ sort, onApply, onClose }: { sort: Sort; onApply: (s: Sort) => void; onClose: () => void }) {

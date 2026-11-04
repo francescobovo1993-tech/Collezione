@@ -172,15 +172,14 @@ tbody tr:last-child td{border-bottom:0}
 .panel-h{padding:18px 22px 8px}
 .panel-b{flex:1;overflow:auto;padding:4px 22px 16px}
 .panel-f{padding:14px 22px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px solid var(--line)}
-.ci{background:var(--card);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:2px 12px;align-items:center}
+.ci{background:var(--card);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center}
 .ci .n{font-weight:600}
-.ci .d{grid-column:2;font-size:13px;color:var(--muted)}
-.ci .p{grid-row:1/3;grid-column:3;text-align:right}
+.ci .d{grid-column:1;font-size:13px;color:var(--muted)}
+.ci .p{grid-row:1/3;grid-column:2;text-align:right}
 .ci .p .q{display:flex;align-items:center;gap:6px;justify-content:flex-end}
 .ci input{width:76px;border:0;background:var(--field);border-radius:10px;padding:6px 8px;text-align:right;font-variant-numeric:tabular-nums}
 .ci .rm{all:unset;cursor:pointer;color:var(--muted);font-size:13px;margin-top:4px;display:inline-block}
 .ci .rm:hover{color:var(--red)}
-.ci .ico{grid-row:1/3}
 .tot{display:flex;justify-content:space-between;align-items:baseline;margin:14px 2px 2px;font-weight:600}
 .tot span:last-child{font-size:20px}
 .opts{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
