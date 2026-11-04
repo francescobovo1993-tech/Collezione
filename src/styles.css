@@ -239,24 +239,25 @@ tbody tr:last-child td{border-bottom:0}
   table{min-width:0}
   thead{display:none}
   table,tbody{display:block}
-  tbody tr{display:grid;grid-template-columns:1fr auto;gap:6px 10px;background:var(--card);border-radius:16px;padding:14px;margin-bottom:8px}
+  /* Revolut-style list: one card, slim rows (name + size, toggle on the right); tap the row for the card */
+  tbody{background:var(--card);border-radius:20px;padding:4px 0;overflow:hidden}
+  tbody tr{display:flex;align-items:center;gap:12px;padding:10px 16px;position:relative;min-height:60px}
   tbody tr:hover td{background:transparent}
+  tbody tr:active{background:var(--row-hover)}
   tbody td{display:block;border:0;padding:0;width:auto!important}
-  td.c-name{grid-column:1;grid-row:1}
-  td.c-own{grid-column:2;grid-row:1;justify-self:end}
-  td.c-a,td.c-b,td.c-notes,td.c-cat{display:none}
-  td.c-price{grid-column:1 / -1;grid-row:2;color:var(--muted);font-size:13px}
-  td.c-vol{grid-column:1 / -1;grid-row:3}
-  td.c-vol.empty{display:none}
-  .ssel.none{color:var(--muted)}
-  td.c-vol .ell{white-space:normal;max-width:none}
-  td.c-stock{grid-column:1;grid-row:4}
-  td.c-buy{grid-column:2;grid-row:4;text-align:right}
-  .dims-m{display:inline!important}
+  td.c-name{flex:1;min-width:0}
+  td.c-own{flex:0 0 auto;position:relative;z-index:1}
+  td.c-a,td.c-b,td.c-notes,td.c-cat,td.c-price,td.c-vol,td.c-stock,td.c-buy{display:none}
+  .namebtn{color:var(--ink);font-size:16px;font-weight:500;display:block;min-width:0}
+  .namebtn::after{content:"";position:absolute;inset:0}
+  .namebtn .nm{display:inline}
+  .namebtn:hover .nm{text-decoration:none}
+  .sub-m{display:block;color:var(--muted);font-size:14px;font-weight:400;margin-top:2px}
+  td .empty-state{background:var(--card)}
   /* bottom sheets */
   .modal.sheet{left:0;right:0;top:auto;bottom:0;transform:none;width:100%;max-height:88vh;border-radius:24px 24px 0 0;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
 }
-.dims-m{display:none;color:var(--muted);font-weight:400;margin-right:6px}
+.sub-m{display:none}
 @media (prefers-reduced-motion:no-preference){ .modal,.panel,.menu{animation:pop .14s ease-out} @keyframes pop{from{opacity:0;transform:translate(var(--tx,0),var(--ty,0)) scale(.98)}} .modal{--tx:-50%;--ty:-50%} }
 
 /* ---------- additions for the repo app ---------- */
@@ -361,4 +362,4 @@ td.c-notes{vertical-align:middle}
 .hv-card{position:fixed;z-index:30;background:var(--card);color:var(--ink);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;font-size:14px;line-height:1.5;white-space:normal;overflow-wrap:anywhere;max-height:320px;overflow:auto;pointer-events:none}
 @media (prefers-reduced-motion:no-preference){ .hv-card{animation:fade .12s ease-out} }
 /* mobile cards: show Volumi in full, no clamp */
-@media (max-width:860px){ td.c-vol .xp-t.clamp{display:block;-webkit-line-clamp:unset!important;overflow:visible} }
+@media (max-width:860px){ .sub-m{display:block} td.c-own{order:2} }

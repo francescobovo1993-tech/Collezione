@@ -147,6 +147,7 @@ export function CatalogRow({ r, owned, stock, qty, onToggleOwned, onStock, onOpe
             <span className="nm">{r.name}</span>
             {r.removed && <span className="tag">non più su WR</span>}
             {r.source === 'manuale' && <span className="tag grey">non WR</span>}
+            <span className="sub-m" aria-hidden="true">{dimsOf(r) || (CATS[r.cat] ?? r.cat)}</span>
           </span>
         </button>
       </td>
@@ -154,7 +155,7 @@ export function CatalogRow({ r, owned, stock, qty, onToggleOwned, onStock, onOpe
       <td className="c-b">{r.b ?? '—'}</td>
       <td className="c-cat">{CATS[r.cat] ?? r.cat}</td>
       <td className="c-price">
-        <span className="dims-m">{dimsOf(r)} ·</span>{eur(r.price)}{r.pack ? <small>/{r.pack} pz</small> : null}
+        {eur(r.price)}{r.pack ? <small>/{r.pack} pz</small> : null}
       </td>
       <td className={'c-vol' + (r.volumi ? '' : ' empty')}>
         {r.volumi ? <HoverText text={r.volumi} lines={2} /> : <span style={{ color: 'var(--faint)' }}>—</span>}
