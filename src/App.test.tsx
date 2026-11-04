@@ -379,3 +379,27 @@ describe('Note WR show more / show less', () => {
     expect(within(screen.getByRole('dialog')).queryByRole('button', { name: /Mostra di/ })).toBeNull();
   });
 });
+
+describe('desktop hover card for long table text', () => {
+  it('shows the full Note WR on hover and hides it on leave', () => {
+    const g = globalThis as { ResizeObserver?: unknown; matchMedia?: unknown };
+    const origRO = g.ResizeObserver, origMM = g.matchMedia;
+    g.ResizeObserver = class { constructor(private cb: () => void) {} observe() { this.cb(); } disconnect() {} };
+    g.matchMedia = () => ({ matches: true });
+    const sh = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollHeight');
+    Object.defineProperty(HTMLElement.prototype, 'scrollHeight', { configurable: true, get() { return this.classList?.contains('clamp') ? 100 : 0; } });
+    try {
+      setup();
+      const cell = row('fumetti~bonelli-book').querySelector('td.c-notes .hv')!;
+      expect(screen.queryByRole('tooltip')).toBeNull();
+      fireEvent.mouseEnter(cell);
+      expect(screen.getByRole('tooltip').textContent).toMatch(/^Dylan Dog Book 1-76/);
+      fireEvent.mouseLeave(cell);
+      expect(screen.queryByRole('tooltip')).toBeNull();
+      expect(within(row('fumetti~bonelli-book')).queryByRole('button', { name: /Mostra di/ })).toBeNull();
+    } finally {
+      g.ResizeObserver = origRO; g.matchMedia = origMM;
+      if (sh) Object.defineProperty(HTMLElement.prototype, 'scrollHeight', sh); else delete (HTMLElement.prototype as { scrollHeight?: number }).scrollHeight;
+    }
+  });
+});
